@@ -1,0 +1,2067 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DPDPA Guardian AI – Enterprise Compliance Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        logo:    ['"Space Grotesk"','sans-serif'],
+                        heading: ['"Plus Jakarta Sans"','sans-serif'],
+                        sans:    ['"Inter"','sans-serif'],
+                        mono:    ['"JetBrains Mono"','monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar{width:5px;height:5px}
+        ::-webkit-scrollbar-track{background:#020617}
+        ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:9999px}
+        ::-webkit-scrollbar-thumb:hover{background:#14b8a6}
+
+        /* ── Core animations ── */
+        @keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+        @keyframes pulse-ring{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.04)}}
+        @keyframes counter-up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+        .animate-fade-up{animation:fadeInUp .4s cubic-bezier(.16,1,.3,1) both}
+        .animate-slide-in{animation:slideIn .32s ease-out forwards}
+        .stagger-1{animation-delay:.05s} .stagger-2{animation-delay:.1s}
+        .stagger-3{animation-delay:.15s} .stagger-4{animation-delay:.2s}
+
+        /* ── View sections ── */
+        .view-section{display:none}
+        .view-section.active-view{display:block;animation:fadeInUp .35s cubic-bezier(.16,1,.3,1) both}
+
+        /* ── Card base ── */
+        .card{
+            background:rgba(15,23,42,.7);
+            backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+            border:1px solid rgba(51,65,85,.6);
+            border-radius:1rem;
+            transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+        }
+        .card:hover{transform:translateY(-2px);border-color:rgba(20,184,166,.25);box-shadow:0 12px 32px rgba(0,0,0,.35)}
+
+        /* ── KPI card accents ── */
+        .kpi-accent-teal{border-top:2px solid #14b8a6;box-shadow:0 0 20px rgba(20,184,166,.12)}
+        .kpi-accent-red{border-top:2px solid #f43f5e;box-shadow:0 0 20px rgba(244,63,94,.1)}
+        .kpi-accent-amber{border-top:2px solid #f59e0b;box-shadow:0 0 20px rgba(245,158,11,.1)}
+        .kpi-accent-indigo{border-top:2px solid #6366f1;box-shadow:0 0 20px rgba(99,102,241,.1)}
+
+        /* ── Severity dots ── */
+        .sev-dot{width:.55rem;height:.55rem;border-radius:50%;display:inline-block;flex-shrink:0}
+        .sev-critical{background:#f43f5e;box-shadow:0 0 6px #f43f5e}
+        .sev-high{background:#f59e0b;box-shadow:0 0 6px #f59e0b}
+        .sev-medium{background:#6366f1;box-shadow:0 0 6px #6366f1}
+        .sev-low{background:#14b8a6;box-shadow:0 0 6px #14b8a6}
+
+        /* ── Status badge ── */
+        .badge{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .65rem;border-radius:9999px;font-size:.65rem;font-weight:700;letter-spacing:.04em;font-family:'JetBrains Mono',monospace}
+        .badge-pending{background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
+        .badge-progress{background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.3)}
+        .badge-done{background:rgba(20,184,166,.12);color:#2dd4bf;border:1px solid rgba(20,184,166,.3)}
+        .badge-critical{background:rgba(244,63,94,.12);color:#fb7185;border:1px solid rgba(244,63,94,.3)}
+        .badge-env-prod{background:rgba(20,184,166,.15);color:#2dd4bf;border:1px solid rgba(20,184,166,.4)}
+        .badge-env-uat{background:rgba(234,179,8,.15);color:#fde047;border:1px solid rgba(234,179,8,.4)}
+        .badge-env-dev{background:rgba(249,115,22,.15);color:#fb923c;border:1px solid rgba(249,115,22,.4)}
+
+        /* ── SVG gauge ── */
+        .gauge-ring{fill:none;stroke:#1e293b;stroke-width:9}
+        .gauge-fill{fill:none;stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1)}
+        .gauge-pulse{animation:pulse-ring 3s ease-in-out infinite}
+
+        /* ── Expandable section ── */
+        .expand-toggle{cursor:pointer;user-select:none}
+        .expand-body{overflow:hidden;transition:max-height .35s ease,opacity .25s ease;max-height:0;opacity:0}
+        .expand-body.open{max-height:800px;opacity:1}
+
+        /* ── Tooltip ── */
+        [data-tip]{position:relative}
+        [data-tip]::after{
+            content:attr(data-tip);
+            position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);
+            background:#0f172a;color:#94a3b8;font-size:.6rem;white-space:nowrap;
+            padding:.3rem .6rem;border-radius:.375rem;border:1px solid #1e293b;
+            pointer-events:none;opacity:0;transition:opacity .15s;font-family:'JetBrains Mono',monospace;
+            z-index:100;
+        }
+        [data-tip]:hover::after{opacity:1}
+
+        /* ── Sidebar icons only mode ── */
+        .sidebar-collapsed .nav-label,.sidebar-collapsed .nav-badge,
+        .sidebar-collapsed .sidebar-section-label,.sidebar-collapsed .user-meta{display:none}
+        .sidebar-collapsed .nav-item{justify-content:center;padding:.6rem}
+        .sidebar-collapsed{width:4rem!important}
+        .sidebar-collapsed~.dashboard-main{margin-left:4rem}
+
+        /* ── Progress bar ── */
+        .prog-bar{height:.35rem;border-radius:9999px;background:#1e293b;overflow:hidden}
+        .prog-fill{height:100%;border-radius:9999px;transition:width 1s ease}
+
+        /* ── Toast ── */
+        .toast-item{
+            display:flex;align-items:flex-start;gap:.75rem;
+            background:#0f172a;border-left:3px solid #6366f1;
+            border-radius:.5rem;padding:.85rem 1rem;
+            box-shadow:0 8px 32px rgba(0,0,0,.5);font-size:.8rem;
+            pointer-events:all;animation:slideIn .3s ease-out;
+            border:1px solid #1e293b;border-left-width:3px;
+        }
+        .toast-success{border-left-color:#14b8a6}
+        .toast-error{border-left-color:#f43f5e}
+        .toast-info{border-left-color:#6366f1}
+        .toast-warn{border-left-color:#f59e0b}
+
+        /* ── Responsive grid helpers ── */
+        .grid-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+        .grid-2col{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+        .grid-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+        .grid-3-2{display:grid;grid-template-columns:1.5fr 1fr;gap:1rem}
+        @media(max-width:1024px){.grid-kpi{grid-template-columns:repeat(2,1fr)}.grid-3col{grid-template-columns:repeat(2,1fr)}.grid-3-2{grid-template-columns:1fr}}
+        @media(max-width:640px){.grid-kpi{grid-template-columns:1fr}.grid-2col{grid-template-columns:1fr}.grid-3col{grid-template-columns:1fr}.grid-3-2{grid-template-columns:1fr}}
+
+        /* ── Sidebar layout ── */
+        #app-sidebar{width:15rem;flex-shrink:0;transition:width .25s ease}
+        .dashboard-main{flex:1;overflow-y:auto;padding:1.5rem;transition:margin-left .25s ease}
+        .dashboard-shell{display:flex;height:calc(100vh - 4rem);overflow:hidden}
+
+        /* ── Action button group ── */
+        .action-group{display:flex;gap:.625rem;align-items:center;flex-wrap:wrap}
+        .action-btn{
+            display:inline-flex;align-items:center;gap:.4rem;
+            padding:.5rem 1rem;border-radius:.5rem;font-size:.72rem;font-weight:700;
+            font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:all .18s ease;
+            border:1px solid transparent;white-space:nowrap;
+        }
+        .action-btn-primary{background:linear-gradient(135deg,#0d9488,#6366f1);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.3)}
+        .action-btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,.4)}
+        .action-btn-danger{background:rgba(244,63,94,.1);color:#fb7185;border-color:rgba(244,63,94,.3)}
+        .action-btn-danger:hover{background:rgba(244,63,94,.2)}
+        .action-btn-ghost{background:rgba(30,41,59,.6);color:#94a3b8;border-color:#334155}
+        .action-btn-ghost:hover{color:#e2e8f0;border-color:#475569}
+
+        /* ── Separator ── */
+        .section-sep{height:1px;background:linear-gradient(90deg,transparent,#1e293b 20%,#1e293b 80%,transparent);margin:1.25rem 0}
+
+        /* ── Chart SVG ── */
+        .chart-line{fill:none;stroke:#0d9488;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+        .chart-area{fill:url(#areaGrad);opacity:.3}
+
+        /* ── Mobile bottom nav ── */
+        @media(max-width:640px){
+            #app-sidebar{display:none}
+            .dashboard-main{padding:.75rem}
+            #mobile-bottom-nav{display:flex}
+        }
+        #mobile-bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:80;
+            background:#0a0f1e;border-top:1px solid #1e293b;padding:.5rem 0;gap:0}
+        .mob-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:.2rem;
+            padding:.5rem .25rem;font-size:.55rem;color:#64748b;cursor:pointer;transition:color .15s}
+        .mob-nav-item.active,.mob-nav-item:hover{color:#14b8a6}
+        .mob-nav-icon{font-size:1.1rem}
+    </style>
+    </head>
+
+    <body class="bg-slate-950 text-slate-100 font-sans min-h-screen overflow-x-hidden">
+
+        <!-- ══ TOAST CONTAINER ══ -->
+        <div id="toast-container" class="fixed top-4 right-4 z-[999] flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+        <!-- ══════════════════════════════════════════════
+       GLOBAL HEADER (sticky, always visible)
+  ══════════════════════════════════════════════ -->
+        <header class="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/80 h-16 flex items-center px-4 gap-3">
+            <!-- Logo -->
+            <div class="flex items-center gap-2.5 cursor-pointer flex-shrink-0" onclick="switchView('landing')">
+                <div class="w-9 h-9 bg-gradient-to-tr from-teal-500 to-indigo-600 rounded-xl flex items-center justify-center text-xl shadow-lg shadow-teal-500/20">🛡️</div>
+                <div class="hidden sm:block">
+                    <span class="font-logo text-lg font-bold tracking-tight bg-gradient-to-r from-teal-400 via-indigo-300 to-white bg-clip-text text-transparent">DPDPA Guardian AI</span>
+                    <span class="block text-[8px] text-slate-500 uppercase tracking-widest font-mono">Enterprise Compliance Platform</span>
+                </div>
+            </div>
+
+            <!-- Environment Badge + Tenant Switcher -->
+            <div class="hidden md:flex items-center gap-2 ml-2" id="env-controls">
+                <select id="envSelector" onchange="switchEnv(this.value)"
+                        class="text-[10px] font-mono font-bold bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-teal-400 focus:outline-none focus:border-teal-500 cursor-pointer">
+                    <option value="PROD">🟢 PRODUCTION</option>
+                    <option value="UAT">🟡 UAT</option>
+                    <option value="STAGING">🔵 STAGING</option>
+                    <option value="DEV">🟠 DEV</option>
+                    <option value="DR">🔴 DR</option>
+                </select>
+                <span id="envBadge" class="badge badge-env-prod">PROD</span>
+                <select id="tenantSwitcher" onchange="switchTenant(this.value)"
+                        class="text-[10px] font-mono bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-indigo-300 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                    <option value="HDFC">🏦 HDFC Fintech</option>
+                    <option value="ICICI">🏦 ICICI Bank</option>
+                    <option value="SBI">🏦 SBI</option>
+                    <option value="KOTAK">🏦 Kotak Mahindra</option>
+                    <option value="ALL">👑 Global Admin</option>
+                </select>
+            </div>
+
+            <!-- Search -->
+            <div class="flex-1 max-w-xs hidden lg:block relative" id="header-search-wrap">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">🔍</span>
+                <input id="global-search" type="text" placeholder="Search records, incidents, policies…"
+                       class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-3 py-2 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-teal-500 transition-colors"
+                       oninput="runGlobalSearch(this.value)">
+                <div id="search-dropdown" class="hidden absolute top-full mt-1 left-0 right-0 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden max-h-72 overflow-y-auto"></div>
+            </div>
+
+            <!-- Right actions -->
+            <div class="ml-auto flex items-center gap-2" id="nav-actions-right">
+                <!-- Filled by switchView() -->
+            </div>
+        </header>
+
+        <!-- ══════════════════════════════════════════════
+       LANDING VIEW
+  ══════════════════════════════════════════════ -->
+        <section id="view-landing" class="view-section active-view">
+            <div class="relative overflow-hidden">
+                <!-- Background glows -->
+                <div class="absolute top-0 left-1/4 w-96 h-96 bg-teal-900/15 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-indigo-950/15 rounded-full blur-3xl pointer-events-none"></div>
+
+                <!-- Hero -->
+                <div class="max-w-7xl mx-auto px-4 pt-16 pb-12">
+                    <div class="text-center max-w-4xl mx-auto">
+                        <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-teal-950/60 border border-teal-800/60 rounded-full text-[11px] font-mono text-teal-400 mb-6 animate-fade-up">
+                            <span class="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></span>
+                            AI-Powered · DPDPA 2023 Compliant · Enterprise Grade
+                        </div>
+                        <h1 class="font-heading text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-5 animate-fade-up stagger-1">
+                            Protect Personal Data.<br>
+                            <span class="bg-gradient-to-r from-teal-400 via-indigo-300 to-white bg-clip-text text-transparent">Automate Compliance.</span><br>
+                            Eliminate Risk.
+                        </h1>
+                        <p class="text-slate-400 text-base md:text-lg max-w-2xl mx-auto mb-8 animate-fade-up stagger-2 leading-relaxed">
+                            DPDPA Guardian AI is an enterprise-grade platform helping banks, NBFCs, fintech companies, insurance providers, and enterprises achieve continuous compliance with India's Digital Personal Data Protection Act 2023.
+                        </p>
+                        <!-- CTA buttons aligned -->
+                        <div class="action-group justify-center mb-10 animate-fade-up stagger-3">
+                            <button onclick="switchView('register')" class="action-btn action-btn-primary text-sm px-7 py-3">
+                                🚀 Request Demo <span class="badge badge-done ml-1">Free</span>
+                            </button>
+                            <button onclick="switchView('register')" class="action-btn action-btn-ghost text-sm px-7 py-3">
+                                ▶ Start Free Trial
+                            </button>
+                        </div>
+                        <!-- Highlights grid -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto animate-fade-up stagger-4">
+                            <div class="card px-3 py-3 text-left"><span class="sev-dot sev-low mr-1.5"></span><span class="text-xs text-slate-300">AI Compliance Monitoring</span></div>
+                            <div class="card px-3 py-3 text-left"><span class="sev-dot sev-low mr-1.5"></span><span class="text-xs text-slate-300">Real-Time Risk Detection</span></div>
+                            <div class="card px-3 py-3 text-left"><span class="sev-dot sev-low mr-1.5"></span><span class="text-xs text-slate-300">Consent Lifecycle Mgmt</span></div>
+                            <div class="card px-3 py-3 text-left"><span class="sev-dot sev-low mr-1.5"></span><span class="text-xs text-slate-300">Breach Response Auto</span></div>
+                            <div class="card px-3 py-3 text-left"><span class="sev-dot sev-low mr-1.5"></span><span class="text-xs text-slate-300">Data Principal Rights</span></div>
+                            <div class="card px-3 py-3 text-left"><span class="sev-dot sev-low mr-1.5"></span><span class="text-xs text-slate-300">Vendor Risk Governance</span></div>
+                            <div class="card px-3 py-3 text-left"><span class="sev-dot sev-low mr-1.5"></span><span class="text-xs text-slate-300">Regulatory Reporting</span></div>
+                            <div class="card px-3 py-3 text-left"><span class="sev-dot sev-low mr-1.5"></span><span class="text-xs text-slate-300">Audit Readiness</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Separator -->
+                <div class="section-sep mx-4 md:mx-8"></div>
+
+                <!-- ROI Metrics strip -->
+                <div class="max-w-7xl mx-auto px-4 pb-10">
+                    <p class="text-center text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-5">Proven Enterprise Results</p>
+                    <div class="grid grid-kpi gap-4">
+                        <div class="card p-5 text-center kpi-accent-teal">
+                            <div class="text-3xl font-mono font-bold text-teal-400 mb-1">₹25Cr</div>
+                            <div class="text-xs text-slate-400">Max DPDPA Fine Avoided</div>
+                            <div class="prog-bar mt-3"><div class="prog-fill bg-teal-500" style="width:90%"></div></div>
+                        </div>
+                        <div class="card p-5 text-center kpi-accent-indigo">
+                            <div class="text-3xl font-mono font-bold text-indigo-400 mb-1">70%</div>
+                            <div class="text-xs text-slate-400">Compliance Effort Saved</div>
+                            <div class="prog-bar mt-3"><div class="prog-fill bg-indigo-500" style="width:70%"></div></div>
+                        </div>
+                        <div class="card p-5 text-center kpi-accent-amber">
+                            <div class="text-3xl font-mono font-bold text-amber-400 mb-1">₹8.2L</div>
+                            <div class="text-xs text-slate-400">Annual Automation Savings</div>
+                            <div class="prog-bar mt-3"><div class="prog-fill bg-amber-500" style="width:65%"></div></div>
+                        </div>
+                        <div class="card p-5 text-center kpi-accent-teal">
+                            <div class="text-3xl font-mono font-bold text-teal-400 mb-1">14×</div>
+                            <div class="text-xs text-slate-400">ROI on Platform Investment</div>
+                            <div class="prog-bar mt-3"><div class="prog-fill bg-teal-500" style="width:95%"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trusted by -->
+                <div class="border-y border-slate-800/60 py-6 mb-10">
+                    <p class="text-center text-[10px] font-mono text-slate-600 uppercase tracking-widest mb-5">Trusted By Leading Financial Organizations</p>
+                    <div class="flex flex-wrap justify-center gap-6 md:gap-10 text-slate-500 text-sm font-heading font-semibold">
+                        <span class="flex items-center gap-2 hover:text-teal-400 transition-colors"><span class="text-xl">🏦</span> Banks</span>
+                        <span class="flex items-center gap-2 hover:text-teal-400 transition-colors"><span class="text-xl">💳</span> FinTech</span>
+                        <span class="flex items-center gap-2 hover:text-teal-400 transition-colors"><span class="text-xl">🛡️</span> Insurance</span>
+                        <span class="flex items-center gap-2 hover:text-teal-400 transition-colors"><span class="text-xl">📊</span> NBFCs</span>
+                        <span class="flex items-center gap-2 hover:text-teal-400 transition-colors"><span class="text-xl">🏢</span> Enterprises</span>
+                        <span class="flex items-center gap-2 hover:text-teal-400 transition-colors"><span class="text-xl">🏛️</span> Government</span>
+                    </div>
+                </div>
+
+                <!-- AI Agents section -->
+                <div class="max-w-7xl mx-auto px-4 pb-14" id="capabilities">
+                    <div class="text-center mb-8">
+                        <p class="text-[10px] font-mono text-teal-400 uppercase tracking-widest mb-2">Why DPDPA Guardian AI</p>
+                        <h2 class="font-heading text-3xl font-bold">AI Compliance Agents Working 24×7</h2>
+                        <p class="text-slate-400 mt-2 text-sm max-w-xl mx-auto">Autonomous AI agents continuously monitor, assess, and improve your compliance posture.</p>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div class="card p-5"><div class="text-2xl mb-3">🔍</div><h4 class="font-heading text-sm font-bold mb-2">Data Discovery Agent</h4><p class="text-xs text-slate-400">Automatically discovers and classifies personal data across all sources.</p><div class="mt-3 flex items-center gap-1.5 text-[10px] font-mono text-teal-400"><span class="sev-dot sev-low"></span>Active</div></div>
+                        <div class="card p-5"><div class="text-2xl mb-3">✅</div><h4 class="font-heading text-sm font-bold mb-2">Consent Verification</h4><p class="text-xs text-slate-400">Tracks and validates consent records, flagging expired entries instantly.</p><div class="mt-3 flex items-center gap-1.5 text-[10px] font-mono text-teal-400"><span class="sev-dot sev-low"></span>Active</div></div>
+                        <div class="card p-5"><div class="text-2xl mb-3">⚠️</div><h4 class="font-heading text-sm font-bold mb-2">Privacy Risk Agent</h4><p class="text-xs text-slate-400">Identifies privacy risks before they become violations.</p><div class="mt-3 flex items-center gap-1.5 text-[10px] font-mono text-amber-400"><span class="sev-dot sev-high"></span>Alert</div></div>
+                        <div class="card p-5"><div class="text-2xl mb-3">🔥</div><h4 class="font-heading text-sm font-bold mb-2">Incident Response</h4><p class="text-xs text-slate-400">Detects and responds to breaches with automated notifications.</p><div class="mt-3 flex items-center gap-1.5 text-[10px] font-mono text-red-400"><span class="sev-dot sev-critical"></span>Alert</div></div>
+                        <div class="card p-5"><div class="text-2xl mb-3">💬</div><h4 class="font-heading text-sm font-bold mb-2">Compliance Advisor</h4><p class="text-xs text-slate-400">AI-powered guidance via natural language with RAG-backed queries.</p><div class="mt-3 flex items-center gap-1.5 text-[10px] font-mono text-teal-400"><span class="sev-dot sev-low"></span>Active</div></div>
+                    </div>
+                </div>
+
+                <!-- Capabilities grid -->
+                <div class="bg-slate-900/40 border-y border-slate-800/60 py-14">
+                    <div class="max-w-7xl mx-auto px-4">
+                        <div class="text-center mb-8">
+                            <p class="text-[10px] font-mono text-indigo-400 uppercase tracking-widest mb-2">Platform Capabilities</p>
+                            <h2 class="font-heading text-3xl font-bold">Everything for DPDPA Compliance</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            <div class="card p-5"><h4 class="font-heading text-sm font-bold mb-3 flex items-center gap-2">🔎 <span>Data Discovery & Classification</span></h4><ul class="space-y-2">{['Aadhaar Numbers','PAN Numbers','Bank Account Information','Email Addresses','Phone Numbers','Financial Records'].map(i=>`<li class="flex items-center gap-2 text-xs text-slate-400"><span class="sev-dot sev-low"></span>${i}</li>`).join('')}</ul></div>
+                            <div class="card p-5"><h4 class="font-heading text-sm font-bold mb-3 flex items-center gap-2">✅ <span>Consent Lifecycle Management</span></h4><ul class="space-y-2">{['Consent Collection','Consent Verification','Consent Renewal','Consent Withdrawal','Consent Audit Trails'].map(i=>`<li class="flex items-center gap-2 text-xs text-slate-400"><span class="sev-dot sev-low"></span>${i}</li>`).join('')}</ul></div>
+                            <div class="card p-5"><h4 class="font-heading text-sm font-bold mb-3 flex items-center gap-2">👤 <span>Data Principal Rights</span></h4><ul class="space-y-2">{['Access Requests','Correction Requests','Erasure Requests','Data Portability','Consent Withdrawal'].map(i=>`<li class="flex items-center gap-2 text-xs text-slate-400"><span class="sev-dot sev-low"></span>${i}</li>`).join('')}</ul></div>
+                            <div class="card p-5"><h4 class="font-heading text-sm font-bold mb-3 flex items-center gap-2">⚠️ <span>Risk Assessment Engine</span></h4><ul class="space-y-2">{['Privacy Risk Scoring','Department Risk Analysis','Third-Party Risk Monitoring','Compliance Gap Detection'].map(i=>`<li class="flex items-center gap-2 text-xs text-slate-400"><span class="sev-dot sev-medium"></span>${i}</li>`).join('')}</ul></div>
+                            <div class="card p-5"><h4 class="font-heading text-sm font-bold mb-3 flex items-center gap-2">🔥 <span>Breach Management</span></h4><ul class="space-y-2">{['Incident Detection','Root Cause Analysis','Regulatory Notification','Response Workflows'].map(i=>`<li class="flex items-center gap-2 text-xs text-slate-400"><span class="sev-dot sev-critical"></span>${i}</li>`).join('')}</ul></div>
+                            <div class="card p-5"><h4 class="font-heading text-sm font-bold mb-3 flex items-center gap-2">🏢 <span>Vendor Compliance</span></h4><ul class="space-y-2">{['Vendor Risk Assessment','DPA Management','Third-Party Monitoring','Compliance Scoring'].map(i=>`<li class="flex items-center gap-2 text-xs text-slate-400"><span class="sev-dot sev-low"></span>${i}</li>`).join('')}</ul></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard preview with SVG gauge -->
+                <div class="max-w-7xl mx-auto px-4 py-14">
+                    <div class="text-center mb-8">
+                        <p class="text-[10px] font-mono text-teal-400 uppercase tracking-widest mb-2">Real-Time Compliance Dashboard</p>
+                        <h2 class="font-heading text-3xl font-bold">Monitor Everything In One Place</h2>
+                    </div>
+                    <div class="card p-6">
+                        <div class="grid-kpi gap-4 mb-6">
+                            <div class="card p-4 kpi-accent-teal text-center">
+                                <div class="text-2xl font-mono font-bold text-teal-400">78</div>
+                                <div class="text-[10px] text-slate-500 mt-1 uppercase tracking-wide font-mono">Compliance Score</div>
+                            </div>
+                            <div class="card p-4 kpi-accent-red text-center">
+                                <div class="text-2xl font-mono font-bold text-red-400">7</div>
+                                <div class="text-[10px] text-slate-500 mt-1 uppercase tracking-wide font-mono">Open Violations</div>
+                            </div>
+                            <div class="card p-4 kpi-accent-amber text-center">
+                                <div class="text-2xl font-mono font-bold text-amber-400">3</div>
+                                <div class="text-[10px] text-slate-500 mt-1 uppercase tracking-wide font-mono">Active Incidents</div>
+                            </div>
+                            <div class="card p-4 kpi-accent-indigo text-center">
+                                <div class="text-2xl font-mono font-bold text-indigo-400">91%</div>
+                                <div class="text-[10px] text-slate-500 mt-1 uppercase tracking-wide font-mono">Consent Rate</div>
+                            </div>
+                        </div>
+                        <!-- SVG area chart preview -->
+                        <div class="bg-slate-900/60 rounded-xl p-4 border border-slate-800">
+                            <p class="text-[10px] font-mono text-slate-500 mb-3 uppercase tracking-wide">Compliance Score Trend — Last 90 Days</p>
+                            <svg viewBox="0 0 600 100" class="w-full" preserveAspectRatio="none">
+                                <defs>
+                                    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#14b8a6" stop-opacity=".5"/>
+                                        <stop offset="100%" stop-color="#14b8a6" stop-opacity="0"/>
+                                    </linearGradient>
+                                </defs>
+                                <path class="chart-area" d="M0,70 L60,62 L120,55 L180,50 L240,45 L300,40 L360,38 L420,35 L480,30 L540,28 L600,22 L600,100 L0,100 Z"/>
+                                <path class="chart-line" d="M0,70 L60,62 L120,55 L180,50 L240,45 L300,40 L360,38 L420,35 L480,30 L540,28 L600,22"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Testimonials -->
+                <div class="bg-slate-900/40 border-y border-slate-800/60 py-14">
+                    <div class="max-w-4xl mx-auto px-4">
+                        <div class="text-center mb-8">
+                            <p class="text-[10px] font-mono text-teal-400 uppercase tracking-widest mb-2">Testimonials</p>
+                            <h2 class="font-heading text-3xl font-bold">What Compliance Leaders Say</h2>
+                        </div>
+                        <div class="grid-2col gap-5">
+                            <div class="card p-6"><p class="text-slate-300 text-sm italic leading-relaxed mb-4">"DPDPA Guardian AI reduced our compliance review effort by 70% within the first quarter."</p><div class="text-[10px] font-mono text-teal-400 uppercase tracking-wide">Chief Compliance Officer · HDFC Fintech</div></div>
+                            <div class="card p-6"><p class="text-slate-300 text-sm italic leading-relaxed mb-4">"Our privacy team now detects risks before they become incidents. Game-changing for our DPO office."</p><div class="text-[10px] font-mono text-teal-400 uppercase tracking-wide">Data Protection Officer · ICICI Bank</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CTA band -->
+                <div class="max-w-7xl mx-auto px-4 py-14 text-center">
+                    <div class="card p-10 bg-gradient-to-br from-teal-950/60 to-indigo-950/40 border-teal-800/40">
+                        <h2 class="font-heading text-3xl font-bold mb-3">Ready to Transform Your DPDPA Compliance?</h2>
+                        <p class="text-slate-400 mb-7 text-sm">Start your free trial today. No credit card required.</p>
+                        <div class="action-group justify-center">
+                            <button onclick="switchView('register')" class="action-btn action-btn-primary text-sm px-8 py-3">🚀 Get Started Free</button>
+                            <button onclick="switchView('register')" class="action-btn action-btn-ghost text-sm px-8 py-3">📞 Book a Demo</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <footer class="border-t border-slate-800/60 py-10 px-4">
+                    <div class="max-w-7xl mx-auto">
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-8">
+                            <div class="col-span-2 md:col-span-1">
+                                <div class="flex items-center gap-2 mb-3"><div class="w-8 h-8 bg-gradient-to-tr from-teal-500 to-indigo-600 rounded-lg flex items-center justify-center text-sm">🛡️</div><span class="font-logo font-bold text-sm">DPDPA Guardian AI</span></div>
+                                <p class="text-xs text-slate-500">AI-powered DPDPA 2023 compliance for financial institutions.</p>
+                            </div>
+                            <div><p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">Solutions</p><div class="space-y-2 text-xs text-slate-400"><p class="hover:text-teal-400 cursor-pointer transition-colors">Data Discovery</p><p class="hover:text-teal-400 cursor-pointer transition-colors">Consent Mgmt</p><p class="hover:text-teal-400 cursor-pointer transition-colors">Risk Assessment</p><p class="hover:text-teal-400 cursor-pointer transition-colors">Breach Mgmt</p></div></div>
+                            <div><p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">Industries</p><div class="space-y-2 text-xs text-slate-400"><p class="hover:text-teal-400 cursor-pointer transition-colors">Banking</p><p class="hover:text-teal-400 cursor-pointer transition-colors">FinTech</p><p class="hover:text-teal-400 cursor-pointer transition-colors">Insurance</p><p class="hover:text-teal-400 cursor-pointer transition-colors">NBFC</p></div></div>
+                            <div><p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">Resources</p><div class="space-y-2 text-xs text-slate-400"><p class="hover:text-teal-400 cursor-pointer transition-colors">Documentation</p><p class="hover:text-teal-400 cursor-pointer transition-colors">Privacy Policy</p><p class="hover:text-teal-400 cursor-pointer transition-colors">Terms of Service</p></div></div>
+                            <div><p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">Company</p><div class="space-y-2 text-xs text-slate-400"><p class="hover:text-teal-400 cursor-pointer transition-colors" onclick="switchView('login')">Sign In</p><p class="hover:text-teal-400 cursor-pointer transition-colors" onclick="switchView('register')">Create Account</p><p class="hover:text-teal-400 cursor-pointer transition-colors">Contact Us</p></div></div>
+                        </div>
+                        <div class="border-t border-slate-800 pt-5 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-slate-600">
+                            <span>© 2026 DPDPA Guardian AI. All Rights Reserved.</span>
+                            <span class="font-mono">Powered by AI Compliance Intelligence · Azure AI Foundry</span>
+                        </div>
+                    </div>
+                </footer>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════
+       REGISTER VIEW
+  ══════════════════════════════════════════════ -->
+        <section id="view-register" class="view-section min-h-screen py-10 px-4">
+            <div class="max-w-2xl mx-auto">
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center gap-2 mb-4"><div class="w-10 h-10 bg-gradient-to-tr from-teal-500 to-indigo-600 rounded-xl flex items-center justify-center text-xl">🛡️</div></div>
+                    <h2 class="font-heading text-2xl font-bold">Create Your Organization Account</h2>
+                    <p class="text-slate-400 text-sm mt-1">Start protecting personal data with AI-powered compliance automation.</p>
+                </div>
+
+                <form id="register-form" onsubmit="handleRegister(event)" class="space-y-5">
+                    <!-- Org info -->
+                    <div class="card p-5">
+                        <h3 class="font-heading text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><span class="w-5 h-5 bg-teal-900 rounded text-teal-400 flex items-center justify-center text-xs">1</span> Organization Information</h3>
+                        <div class="grid-2col gap-4">
+                            <div class="col-span-2 md:col-span-2">
+                                <label class="block text-xs text-slate-400 mb-1.5">Organization Name *</label>
+                                <input id="reg-org-name" required placeholder="e.g. HDFC Fintech Pvt. Ltd." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500 transition-colors placeholder-slate-600">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1.5">Industry</label>
+                                <select id="reg-industry" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500 transition-colors">
+                                    <option>Banking</option><option>FinTech</option><option>Insurance</option><option>NBFC</option><option>Healthcare</option><option>Government</option><option>Enterprise</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1.5">Organization Size</label>
+                                <select id="reg-org-size" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500 transition-colors">
+                                    <option>1–50</option><option>51–500</option><option selected>501–5000</option><option>5000+</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1.5">Organization Domain</label>
+                                <input id="reg-domain" placeholder="yourcompany.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500 transition-colors placeholder-slate-600">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1.5">Tenant ID (Auto Generated)</label>
+                                <input id="reg-tenant-id" readonly class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-sm font-mono text-teal-400 focus:outline-none cursor-not-allowed">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1.5">Country</label>
+                                <select id="reg-country" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500 transition-colors">
+                                    <option>India</option><option>United Arab Emirates</option><option>Singapore</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1.5">State</label>
+                                <select id="reg-state" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500 transition-colors">
+                                    <option>Tamil Nadu</option><option>Maharashtra</option><option>Karnataka</option><option>Delhi</option><option>Telangana</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Admin info -->
+                    <div class="card p-5">
+                        <h3 class="font-heading text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><span class="w-5 h-5 bg-indigo-900 rounded text-indigo-400 flex items-center justify-center text-xs">2</span> Administrator Information</h3>
+                        <div class="grid-2col gap-4">
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1.5">Full Name *</label>
+                                <input id="reg-admin-name" required placeholder="Ananya Rao" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500 transition-colors placeholder-slate-600">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1.5">Designation</label>
+                                <input id="reg-designation" value="Data Protection Officer" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500 transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1.5">Official Email *</label>
+                                <input id="reg-email" type="email" required placeholder="you@company.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500 transition-colors placeholder-slate-600">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1.5">Mobile Number</label>
+                                <input id="reg-mobile" type="tel" placeholder="+91 98765 43210" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500 transition-colors placeholder-slate-600">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1.5">Password *</label>
+                                <input id="reg-password" type="password" required placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500 transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1.5">Confirm Password *</label>
+                                <input id="reg-confirm-password" type="password" required placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500 transition-colors">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Role selection -->
+                    <div class="card p-5">
+                        <h3 class="font-heading text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><span class="w-5 h-5 bg-amber-900 rounded text-amber-400 flex items-center justify-center text-xs">3</span> Select Your Role</h3>
+                        <div class="grid-2col gap-4">
+                            <div id="role-option-dpo" onclick="setSelectedRole('dpo')" class="cursor-pointer p-4 rounded-xl border transition-all bg-slate-950 border-teal-500 ring-1 ring-teal-500/20">
+                                <input type="radio" id="radio-role-dpo" name="role" value="dpo" checked class="hidden">
+                                <div class="flex items-center gap-2 mb-2"><span class="text-lg">🛡️</span><span class="font-heading text-sm font-bold">Native DPO</span><span class="badge badge-done ml-auto">Selected</span></div>
+                                <p class="text-[10px] font-mono text-teal-400 mb-2 uppercase tracking-wide">Full Organization Access</p>
+                                <ul class="space-y-1 text-xs text-slate-400">
+                                    <li class="flex items-center gap-1.5"><span class="sev-dot sev-low"></span>Compliance Governance</li>
+                                    <li class="flex items-center gap-1.5"><span class="sev-dot sev-low"></span>Incident Monitoring</li>
+                                    <li class="flex items-center gap-1.5"><span class="sev-dot sev-low"></span>Regulatory Reporting</li>
+                                    <li class="flex items-center gap-1.5"><span class="sev-dot sev-low"></span>Risk Assessment</li>
+                                </ul>
+                            </div>
+                            <div id="role-option-vendor" onclick="setSelectedRole('vendor')" class="cursor-pointer p-4 rounded-xl border transition-all bg-slate-950/40 border-slate-700 hover:border-indigo-600">
+                                <input type="radio" id="radio-role-vendor" name="role" value="vendor" class="hidden">
+                                <div class="flex items-center gap-2 mb-2"><span class="text-lg">🏢</span><span class="font-heading text-sm font-bold">Vendor Organization</span></div>
+                                <p class="text-[10px] font-mono text-indigo-400 mb-2 uppercase tracking-wide">Vendor Workspace Access</p>
+                                <ul class="space-y-1 text-xs text-slate-400">
+                                    <li class="flex items-center gap-1.5"><span class="sev-dot sev-medium"></span>Third-Party Compliance</li>
+                                    <li class="flex items-center gap-1.5"><span class="sev-dot sev-medium"></span>Vendor Risk Reporting</li>
+                                    <li class="flex items-center gap-1.5"><span class="sev-dot sev-medium"></span>Contract Management</li>
+                                    <li class="flex items-center gap-1.5"><span class="sev-dot sev-medium"></span>Shared Data Monitoring</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Agreements -->
+                    <div class="card p-5">
+                        <h3 class="font-heading text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><span class="w-5 h-5 bg-slate-800 rounded text-slate-400 flex items-center justify-center text-xs">4</span> Compliance Agreement</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" required class="mt-0.5 accent-teal-500"><span class="text-xs text-slate-400">I agree to the <a href="#" class="text-teal-400 hover:underline">Terms and Conditions</a></span></label>
+                            <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" required class="mt-0.5 accent-teal-500"><span class="text-xs text-slate-400">I agree to the <a href="#" class="text-teal-400 hover:underline">Privacy Policy</a></span></label>
+                            <label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" class="mt-0.5 accent-teal-500"><span class="text-xs text-slate-400">I consent to receive compliance notifications via email and Teams</span></label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="action-btn action-btn-primary w-full justify-center text-sm py-3.5">
+                        🛡️ Create Tenant Account
+                    </button>
+                    <p class="text-center text-xs text-slate-500">Already have an account? <button type="button" onclick="switchView('login')" class="text-teal-400 hover:underline font-semibold">Login Here</button></p>
+                </form>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════
+       LOGIN VIEW
+  ══════════════════════════════════════════════ -->
+        <section id="view-login" class="view-section min-h-screen py-10 px-4">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center gap-2 mb-4"><div class="w-10 h-10 bg-gradient-to-tr from-teal-500 to-indigo-600 rounded-xl flex items-center justify-center text-xl">🛡️</div></div>
+                    <h2 class="font-heading text-2xl font-bold">Welcome Back</h2>
+                    <p class="text-slate-400 text-sm mt-1">Login to DPDPA Guardian AI</p>
+                    <p class="font-mono text-[10px] text-teal-400 uppercase tracking-widest mt-1">Secure · Intelligent · Compliant</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Sign in form -->
+                    <div class="card p-6">
+                        <h3 class="font-heading text-sm font-bold mb-5">Sign In</h3>
+                        <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1.5">Tenant ID / Organization ID</label>
+                                <input id="login-tenant-id" placeholder="DG-78429-IND" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm font-mono text-teal-400 focus:outline-none focus:border-teal-500 transition-colors placeholder-slate-600">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1.5">Email Address</label>
+                                <input id="login-email" type="email" placeholder="you@company.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500 transition-colors placeholder-slate-600">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1.5">Password</label>
+                                <input id="login-password" type="password" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500 transition-colors">
+                            </div>
+                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="accent-teal-500"><span class="text-xs text-slate-400">Remember Me</span></label>
+                            <button type="submit" class="action-btn action-btn-primary w-full justify-center py-3">🔐 Sign In</button>
+                            <p class="text-center text-xs text-slate-500"><a href="#" class="text-teal-400 hover:underline">Forgot Password?</a></p>
+                        </form>
+                        <div class="section-sep"></div>
+                        <!-- Security features -->
+                        <p class="text-[10px] font-mono text-slate-600 uppercase tracking-widest mb-3">Security Features</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="flex items-center gap-1.5 text-xs text-slate-400"><span class="sev-dot sev-low"></span>Multi-Factor Auth</div>
+                            <div class="flex items-center gap-1.5 text-xs text-slate-400"><span class="sev-dot sev-low"></span>SSO Support</div>
+                            <div class="flex items-center gap-1.5 text-xs text-slate-400"><span class="sev-dot sev-low"></span>Azure AD Integration</div>
+                            <div class="flex items-center gap-1.5 text-xs text-slate-400"><span class="sev-dot sev-low"></span>Role-Based Access</div>
+                            <div class="flex items-center gap-1.5 text-xs text-slate-400"><span class="sev-dot sev-low"></span>Encrypted Auth</div>
+                            <div class="flex items-center gap-1.5 text-xs text-slate-400"><span class="sev-dot sev-low"></span>Session Monitoring</div>
+                        </div>
+                    </div>
+
+                    <!-- Quick access roles -->
+                    <div class="space-y-4">
+                        <div class="card p-5">
+                            <div class="flex items-center gap-2 mb-3"><span class="text-xl">🛡️</span><div><h4 class="font-heading text-sm font-bold">Native DPO Login</h4><p class="text-[10px] font-mono text-teal-400 uppercase tracking-wide">Full Organization Access</p></div></div>
+                            <ul class="space-y-1.5 mb-4">
+                                <li class="flex items-center gap-2 text-xs text-slate-400"><span class="sev-dot sev-low"></span>Compliance Dashboard & Risk Management</li>
+                                <li class="flex items-center gap-2 text-xs text-slate-400"><span class="sev-dot sev-low"></span>Incident Center & Regulatory Reporting</li>
+                                <li class="flex items-center gap-2 text-xs text-slate-400"><span class="sev-dot sev-low"></span>AI Compliance Copilot</li>
+                            </ul>
+                            <button onclick="handleQuickAccess('dpo')" class="action-btn action-btn-primary w-full justify-center py-2.5">Login as DPO</button>
+                        </div>
+                        <div class="card p-5">
+                            <div class="flex items-center gap-2 mb-3"><span class="text-xl">🏢</span><div><h4 class="font-heading text-sm font-bold">Vendor Login</h4><p class="text-[10px] font-mono text-indigo-400 uppercase tracking-wide">Vendor Workspace Access</p></div></div>
+                            <ul class="space-y-1.5 mb-4">
+                                <li class="flex items-center gap-2 text-xs text-slate-400"><span class="sev-dot sev-medium"></span>Vendor Risk Dashboard</li>
+                                <li class="flex items-center gap-2 text-xs text-slate-400"><span class="sev-dot sev-medium"></span>Compliance Assessments & DPA</li>
+                                <li class="flex items-center gap-2 text-xs text-slate-400"><span class="sev-dot sev-medium"></span>Third-Party Audits</li>
+                            </ul>
+                            <button onclick="handleQuickAccess('vendor')" class="action-btn action-btn-ghost w-full justify-center py-2.5">Login as Vendor</button>
+                        </div>
+                        <p class="text-center text-xs text-slate-500">New here? <button onclick="switchView('register')" class="text-teal-400 hover:underline font-semibold">Create Organization Account</button></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════
+       DPO DASHBOARD VIEW
+  ══════════════════════════════════════════════ -->
+        <section id="view-dpo-dashboard" class="view-section">
+            <div class="dashboard-shell">
+
+                <!-- ── Sidebar ── -->
+                <aside id="app-sidebar" class="bg-slate-950 border-r border-slate-800/60 flex flex-col overflow-y-auto">
+                    <!-- Sidebar header -->
+                    <div class="p-4 border-b border-slate-800/60 flex items-center justify-between">
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <div class="w-8 h-8 bg-gradient-to-tr from-teal-500 to-indigo-600 rounded-lg flex items-center justify-center text-sm flex-shrink-0">🛡️</div>
+                            <div class="nav-label overflow-hidden">
+                                <span class="font-logo text-sm font-bold text-teal-400 truncate block">DPDPA Guardian</span>
+                                <span class="text-[9px] font-mono text-slate-600 uppercase tracking-widest">DPO Workspace</span>
+                            </div>
+                        </div>
+                        <button onclick="toggleSidebarCollapse()" class="text-slate-600 hover:text-slate-300 transition-colors text-xs flex-shrink-0" title="Collapse sidebar">◀</button>
+                    </div>
+
+                    <!-- User chip -->
+                    <div class="p-3 border-b border-slate-800/60">
+                        <div class="flex items-center gap-2.5 px-2 py-2 rounded-xl bg-slate-900/60">
+                            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500 to-indigo-600 flex items-center justify-center font-bold text-sm flex-shrink-0" id="sidebar-avatar">AR</div>
+                            <div class="nav-label overflow-hidden">
+                                <p class="text-xs font-semibold text-slate-200 truncate" id="sidebar-name">Ananya Rao</p>
+                                <p class="text-[9px] font-mono text-slate-500 truncate" id="sidebar-role">DPO · HDFC Fintech</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nav groups -->
+                    <nav class="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
+                        <p class="sidebar-section-label text-[9px] font-mono text-slate-600 uppercase tracking-widest px-3 pb-1.5 pt-2">Overview</p>
+
+                        <button onclick="activeSidebarTab('tab-overview')" id="nav-tab-overview"
+                                class="sidebar-nav-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-all text-left group active-tab"
+                                data-tip="Command Center">
+                            <span class="text-base">📊</span>
+                            <span class="nav-label text-xs font-medium">Command Center</span>
+                        </button>
+                        <button onclick="activeSidebarTab('tab-agents')" id="nav-tab-agents"
+                                class="sidebar-nav-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-all text-left"
+                                data-tip="AI Agents">
+                            <span class="text-base">🤖</span>
+                            <span class="nav-label text-xs font-medium">AI Agents</span>
+                        </button>
+
+                        <p class="sidebar-section-label text-[9px] font-mono text-slate-600 uppercase tracking-widest px-3 pb-1.5 pt-3">Compliance</p>
+                        <button onclick="activeSidebarTab('tab-discovery')" id="nav-tab-discovery"
+                                class="sidebar-nav-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-all text-left"
+                                data-tip="Data Discovery">
+                            <span class="text-base">🔍</span>
+                            <span class="nav-label text-xs font-medium">Data Discovery</span>
+                            <span class="nav-badge ml-auto text-[9px] font-mono bg-amber-900/50 text-amber-400 px-1.5 py-0.5 rounded-full">12</span>
+                        </button>
+                        <button onclick="activeSidebarTab('tab-consent')" id="nav-tab-consent"
+                                class="sidebar-nav-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-all text-left"
+                                data-tip="Consent Manager">
+                            <span class="text-base">✅</span>
+                            <span class="nav-label text-xs font-medium">Consent Manager</span>
+                        </button>
+                        <button onclick="activeSidebarTab('tab-risk')" id="nav-tab-risk"
+                                class="sidebar-nav-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-all text-left"
+                                data-tip="Risk Assessment">
+                            <span class="text-base">⚠️</span>
+                            <span class="nav-label text-xs font-medium">Risk Assessment</span>
+                            <span class="nav-badge ml-auto text-[9px] font-mono bg-red-900/50 text-red-400 px-1.5 py-0.5 rounded-full">4</span>
+                        </button>
+                        <button onclick="activeSidebarTab('tab-violations')" id="nav-tab-violations"
+                                class="sidebar-nav-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-all text-left"
+                                data-tip="Violations">
+                            <span class="text-base">🚫</span>
+                            <span class="nav-label text-xs font-medium">Violations</span>
+                            <span class="nav-badge ml-auto text-[9px] font-mono bg-red-900/50 text-red-400 px-1.5 py-0.5 rounded-full">7</span>
+                        </button>
+
+                        <p class="sidebar-section-label text-[9px] font-mono text-slate-600 uppercase tracking-widest px-3 pb-1.5 pt-3">Operations</p>
+                        <button onclick="activeSidebarTab('tab-incidents')" id="nav-tab-incidents"
+                                class="sidebar-nav-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-all text-left"
+                                data-tip="Incident Management">
+                            <span class="text-base">🔥</span>
+                            <span class="nav-label text-xs font-medium">Incidents</span>
+                            <span class="nav-badge ml-auto text-[9px] font-mono bg-red-900/50 text-red-400 px-1.5 py-0.5 rounded-full animate-pulse">3</span>
+                        </button>
+                        <button onclick="activeSidebarTab('tab-dsar')" id="nav-tab-dsar"
+                                class="sidebar-nav-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-all text-left"
+                                data-tip="DSAR Management">
+                            <span class="text-base">👤</span>
+                            <span class="nav-label text-xs font-medium">DSAR</span>
+                        </button>
+                        <button onclick="activeSidebarTab('tab-vendors')" id="nav-tab-vendors"
+                                class="sidebar-nav-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-all text-left"
+                                data-tip="Vendor Risk">
+                            <span class="text-base">🏢</span>
+                            <span class="nav-label text-xs font-medium">Vendor Risk</span>
+                        </button>
+                        <button onclick="activeSidebarTab('tab-copilot')" id="nav-tab-copilot"
+                                class="sidebar-nav-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-all text-left"
+                                data-tip="AI Copilot">
+                            <span class="text-base">💬</span>
+                            <span class="nav-label text-xs font-medium">AI Copilot</span>
+                        </button>
+
+                        <p class="sidebar-section-label text-[9px] font-mono text-slate-600 uppercase tracking-widest px-3 pb-1.5 pt-3">Analytics</p>
+                        <button onclick="activeSidebarTab('tab-analytics')" id="nav-tab-analytics"
+                                class="sidebar-nav-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-all text-left"
+                                data-tip="Analytics">
+                            <span class="text-base">📈</span>
+                            <span class="nav-label text-xs font-medium">Analytics</span>
+                        </button>
+                        <button onclick="activeSidebarTab('tab-config')" id="nav-tab-config"
+                                class="sidebar-nav-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-all text-left"
+                                data-tip="Configuration">
+                            <span class="text-base">⚙️</span>
+                            <span class="nav-label text-xs font-medium">Configuration</span>
+                        </button>
+                    </nav>
+
+                    <!-- Sidebar footer -->
+                    <div class="p-3 border-t border-slate-800/60">
+                        <button onclick="switchView('landing'); showToast('Signed out safely.','info')"
+                                class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-500 hover:text-red-400 hover:bg-red-950/20 transition-all text-xs">
+                            <span>⬅</span><span class="nav-label">Sign Out</span>
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- ── Main content area ── -->
+                <main class="dashboard-main flex flex-col gap-5">
+
+                    <!-- Dashboard sub-header: workspace info + role tabs + actions -->
+                    <div class="card p-4 flex flex-col gap-3">
+                        <!-- Row 1: identity + env + actions -->
+                        <div class="flex flex-wrap items-start gap-3 justify-between">
+                            <div>
+                                <div class="flex items-center gap-2 mb-0.5">
+                                    <span class="text-[9px] font-mono text-teal-400 uppercase tracking-widest">Workspace Active</span>
+                                    <span class="badge badge-done">DPO Authenticated</span>
+                                    <span id="env-badge-dash" class="badge badge-env-prod ml-1">PROD</span>
+                                </div>
+                                <h2 class="font-heading text-lg font-bold text-white" id="dpo-workspace-title">APEX FINTECH Compliance Command Center</h2>
+                                <p class="text-xs text-slate-400 font-mono" id="dpo-workspace-sub">Administered by: Ramesh Kumar (DPO) · Tenant: DG-78429-IND</p>
+                            </div>
+                            <!-- Action buttons – aligned, consistent size, with status badges -->
+                            <div class="action-group">
+                                <button onclick="registerNewIncident()" class="action-btn action-btn-danger">
+                                    ⚠ Raise Incident <span class="badge badge-critical ml-1">Urgent</span>
+                                </button>
+                                <button onclick="showToast('Compliance report generating…','info')" class="action-btn action-btn-ghost">
+                                    📄 Generate Report <span class="badge badge-pending ml-1">Pending</span>
+                                </button>
+                                <button onclick="showToast('Remediation tasks assigned.','success')" class="action-btn action-btn-ghost">
+                                    ✅ Assign Remediation <span class="badge badge-progress ml-1">In Progress</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: role switcher tabs -->
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="switchDashRole('dpo')" id="drole-dpo" class="drole-btn badge badge-done cursor-pointer hover:opacity-80">🛡️ DPO</button>
+                            <button onclick="switchDashRole('superadmin')" id="drole-superadmin" class="drole-btn badge badge-progress cursor-pointer hover:opacity-80">👑 Super Admin</button>
+                            <button onclick="switchDashRole('auditor')" id="drole-auditor" class="drole-btn badge badge-pending cursor-pointer hover:opacity-80">🔍 Auditor</button>
+                            <button onclick="switchDashRole('executive')" id="drole-executive" class="drole-btn badge badge-pending cursor-pointer hover:opacity-80">📊 Executive Board</button>
+                        </div>
+                    </div>
+
+                    <!-- ── TAB CONTENT PANELS ── -->
+
+                    <!-- TAB: Command Center (default) -->
+                    <div id="tab-overview" class="dash-tab space-y-5">
+
+                        <!-- PRIMARY KPI ROW — critical metrics first -->
+                        <div class="grid-kpi gap-4">
+                            <div class="card p-5 kpi-accent-teal">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div>
+                                        <p class="text-[9px] font-mono text-slate-500 uppercase tracking-widest mb-1">Compliance Score</p>
+                                        <div class="text-4xl font-mono font-bold text-teal-400" id="kpi-score">78</div>
+                                    </div>
+                                    <svg viewBox="0 0 80 80" class="w-16 h-16 -mt-1 -mr-1">
+                                        <circle class="gauge-ring" cx="40" cy="40" r="32"/>
+                                        <circle class="gauge-fill gauge-pulse" cx="40" cy="40" r="32"
+                                                stroke="#14b8a6"
+                                                stroke-dasharray="201.1"
+                                                stroke-dashoffset="44.2"
+                                                transform="rotate(-90 40 40)"/>
+                                        <text x="40" y="44" text-anchor="middle" fill="#2dd4bf" font-size="14" font-weight="800" font-family="JetBrains Mono">78</text>
+                                    </svg>
+                                </div>
+                                <p class="text-xs text-teal-600">Grade B+ · ↑ +4.2% this month</p>
+                                <div class="prog-bar mt-2"><div class="prog-fill bg-teal-500" style="width:78%"></div></div>
+                            </div>
+
+                            <div class="card p-5 kpi-accent-red">
+                                <p class="text-[9px] font-mono text-slate-500 uppercase tracking-widest mb-2">Open Violations</p>
+                                <div class="text-4xl font-mono font-bold text-red-400 mb-2">7</div>
+                                <div class="space-y-1">
+                                    <div class="flex items-center justify-between text-xs"><span class="flex items-center gap-1.5"><span class="sev-dot sev-critical"></span>Critical</span><span class="font-mono text-red-400">2</span></div>
+                                    <div class="flex items-center justify-between text-xs"><span class="flex items-center gap-1.5"><span class="sev-dot sev-high"></span>High</span><span class="font-mono text-amber-400">3</span></div>
+                                    <div class="flex items-center justify-between text-xs"><span class="flex items-center gap-1.5"><span class="sev-dot sev-low"></span>Low</span><span class="font-mono text-teal-400">2</span></div>
+                                </div>
+                            </div>
+
+                            <div class="card p-5 kpi-accent-amber">
+                                <p class="text-[9px] font-mono text-slate-500 uppercase tracking-widest mb-2">Active Incidents</p>
+                                <div class="text-4xl font-mono font-bold text-amber-400 mb-2" id="incidents-metric-active">3</div>
+                                <div class="flex items-center gap-1.5 text-xs text-red-400 mb-1"><span class="sev-dot sev-critical animate-pulse"></span>1 Critical — Aadhaar breach</div>
+                                <div class="flex items-center gap-1.5 text-xs text-amber-400"><span class="sev-dot sev-high"></span>2 High — Under investigation</div>
+                            </div>
+
+                            <div class="card p-5 kpi-accent-indigo">
+                                <p class="text-[9px] font-mono text-slate-500 uppercase tracking-widest mb-2">Consent Rate</p>
+                                <div class="text-4xl font-mono font-bold text-indigo-400 mb-2">91%</div>
+                                <div class="space-y-1">
+                                    <div class="flex items-center justify-between text-xs"><span class="text-slate-400">Valid</span><span class="font-mono text-teal-400">2,847</span></div>
+                                    <div class="flex items-center justify-between text-xs"><span class="text-slate-400">Expiring</span><span class="font-mono text-amber-400">183</span></div>
+                                    <div class="flex items-center justify-between text-xs"><span class="text-slate-400">Expired</span><span class="font-mono text-red-400">96</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Executive Summary card -->
+                        <div class="card p-5 bg-gradient-to-br from-teal-950/40 to-indigo-950/30 border-teal-800/40">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="text-lg">🧠</span>
+                                <h3 class="font-heading text-sm font-bold">AI Executive Summary</h3>
+                                <span class="badge badge-done ml-auto">Live Analysis</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="bg-red-950/30 border border-red-900/40 rounded-xl p-3">
+                                    <div class="flex items-center gap-1.5 mb-1.5"><span class="sev-dot sev-critical"></span><span class="text-[10px] font-mono text-red-400 uppercase tracking-wide">Critical Finding</span></div>
+                                    <p class="text-xs text-slate-300">340 Aadhaar records accessed outside business hours — Incident INC-001</p>
+                                    <button onclick="activeSidebarTab('tab-incidents')" class="action-btn action-btn-danger mt-2 py-1 text-[10px]">Review Incident <span class="badge badge-critical ml-1">Urgent</span></button>
+                                </div>
+                                <div class="bg-amber-950/30 border border-amber-900/40 rounded-xl p-3">
+                                    <div class="flex items-center gap-1.5 mb-1.5"><span class="sev-dot sev-high"></span><span class="text-[10px] font-mono text-amber-400 uppercase tracking-wide">Action Required</span></div>
+                                    <p class="text-xs text-slate-300">12 expired consent records in Loan Processing require renewal immediately</p>
+                                    <button onclick="activeSidebarTab('tab-consent')" class="action-btn action-btn-ghost mt-2 py-1 text-[10px]">Renew Consents <span class="badge badge-pending ml-1">Pending</span></button>
+                                </div>
+                                <div class="bg-indigo-950/30 border border-indigo-900/40 rounded-xl p-3">
+                                    <div class="flex items-center gap-1.5 mb-1.5"><span class="sev-dot sev-medium"></span><span class="text-[10px] font-mono text-indigo-400 uppercase tracking-wide">Risk Alert</span></div>
+                                    <p class="text-xs text-slate-300">Marketing dept exceeds PAN data access threshold — Risk Score 8.7/10</p>
+                                    <button onclick="showToast('Remediation task created.','success')" class="action-btn action-btn-ghost mt-2 py-1 text-[10px]">Assign Fix <span class="badge badge-progress ml-1">In Progress</span></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Separator -->
+                        <div class="section-sep"></div>
+
+                        <!-- Secondary: compliance breakdown + consent donut -->
+                        <div class="grid-3-2 gap-4">
+                            <div class="card p-5">
+                                <h3 class="font-heading text-sm font-bold mb-4">DPDPA Compliance Breakdown</h3>
+                                <div class="space-y-3">
+                                    <div><div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Data Mapping</span><span class="font-mono text-teal-400">82%</span></div><div class="prog-bar"><div class="prog-fill bg-teal-500" style="width:82%"></div></div></div>
+                                    <div><div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Consent Management</span><span class="font-mono text-teal-400">91%</span></div><div class="prog-bar"><div class="prog-fill bg-teal-500" style="width:91%"></div></div></div>
+                                    <div><div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Access Controls</span><span class="font-mono text-amber-400">65%</span></div><div class="prog-bar"><div class="prog-fill bg-amber-500" style="width:65%"></div></div></div>
+                                    <div><div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Breach Response</span><span class="font-mono text-amber-400">70%</span></div><div class="prog-bar"><div class="prog-fill bg-amber-500" style="width:70%"></div></div></div>
+                                    <div><div class="flex justify-between text-xs mb-1"><span class="text-slate-400">DPR Handling</span><span class="font-mono text-teal-400">88%</span></div><div class="prog-bar"><div class="prog-fill bg-teal-500" style="width:88%"></div></div></div>
+                                    <div><div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Vendor DPA</span><span class="font-mono text-red-400">54%</span></div><div class="prog-bar"><div class="prog-fill bg-red-500" style="width:54%"></div></div></div>
+                                    <div><div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Policy Documentation</span><span class="font-mono text-indigo-400">74%</span></div><div class="prog-bar"><div class="prog-fill bg-indigo-500" style="width:74%"></div></div></div>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <!-- Maturity model -->
+                                <div class="card p-5">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h3 class="font-heading text-sm font-bold">Maturity Level</h3>
+                                        <span class="badge badge-progress">Level 4 · Advanced</span>
+                                    </div>
+                                    <div class="flex gap-1 mb-2">
+                                        <div class="flex-1 h-2 rounded-full bg-teal-600"></div>
+                                        <div class="flex-1 h-2 rounded-full bg-teal-600"></div>
+                                        <div class="flex-1 h-2 rounded-full bg-teal-600"></div>
+                                        <div class="flex-1 h-2 rounded-full bg-indigo-500" style="box-shadow:0 0 8px #6366f1"></div>
+                                        <div class="flex-1 h-2 rounded-full bg-slate-700"></div>
+                                    </div>
+                                    <div class="flex justify-between text-[9px] font-mono text-slate-500">
+                                        <span>Initial</span><span>Developing</span><span>Managed</span><span class="text-indigo-400 font-bold">Advanced</span><span>Optimized</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-2">Close 2 critical violations → reach Level 5</p>
+                                </div>
+                                <!-- Consent summary -->
+                                <div class="card p-5">
+                                    <h3 class="font-heading text-sm font-bold mb-3">Consent Status</h3>
+                                    <div class="space-y-2.5">
+                                        <div class="flex items-center gap-2"><div class="w-24 h-1.5 rounded-full bg-teal-500 flex-shrink-0"></div><span class="text-xs text-slate-400 flex-1">Valid & Active</span><span class="font-mono text-xs text-teal-400">2,847</span></div>
+                                        <div class="flex items-center gap-2"><div class="w-6 h-1.5 rounded-full bg-amber-500 flex-shrink-0"></div><span class="text-xs text-slate-400 flex-1">Expiring (30d)</span><span class="font-mono text-xs text-amber-400">183</span></div>
+                                        <div class="flex items-center gap-2"><div class="w-3 h-1.5 rounded-full bg-red-500 flex-shrink-0"></div><span class="text-xs text-slate-400 flex-1">Expired / Invalid</span><span class="font-mono text-xs text-red-400">96</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Separator -->
+                        <div class="section-sep"></div>
+
+                        <!-- Active incidents summary -->
+                        <div class="card p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-heading text-sm font-bold">Active Incidents</h3>
+                                <button onclick="activeSidebarTab('tab-incidents')" class="text-xs text-teal-400 hover:underline font-mono">View All →</button>
+                            </div>
+                            <div class="space-y-3" id="incidents-list-container">
+                                <!-- Filled by renderIncidents() -->
+                            </div>
+                        </div>
+
+                        <!-- Data inventory + heatmap -->
+                        <div class="grid-2col gap-4">
+                            <div class="card p-5">
+                                <h3 class="font-heading text-sm font-bold mb-4">Data Inventory</h3>
+                                <div class="space-y-2.5">
+                                    <div class="flex items-center gap-2"><span class="text-[10px] font-mono text-slate-500 w-28 shrink-0">Aadhaar</span><div class="flex-1 prog-bar"><div class="prog-fill bg-indigo-500" style="width:72%"></div></div><span class="font-mono text-xs text-slate-400 w-12 text-right">4,218</span></div>
+                                    <div class="flex items-center gap-2"><span class="text-[10px] font-mono text-slate-500 w-28 shrink-0">PAN Numbers</span><div class="flex-1 prog-bar"><div class="prog-fill bg-amber-500" style="width:55%"></div></div><span class="font-mono text-xs text-slate-400 w-12 text-right">3,204</span></div>
+                                    <div class="flex items-center gap-2"><span class="text-[10px] font-mono text-slate-500 w-28 shrink-0">Bank Accounts</span><div class="flex-1 prog-bar"><div class="prog-fill bg-teal-500" style="width:48%"></div></div><span class="font-mono text-xs text-slate-400 w-12 text-right">2,847</span></div>
+                                    <div class="flex items-center gap-2"><span class="text-[10px] font-mono text-slate-500 w-28 shrink-0">Phone Numbers</span><div class="flex-1 prog-bar"><div class="prog-fill bg-purple-500" style="width:89%"></div></div><span class="font-mono text-xs text-slate-400 w-12 text-right">5,190</span></div>
+                                    <div class="flex items-center gap-2"><span class="text-[10px] font-mono text-slate-500 w-28 shrink-0">Email Addresses</span><div class="flex-1 prog-bar"><div class="prog-fill bg-pink-500" style="width:95%"></div></div><span class="font-mono text-xs text-slate-400 w-12 text-right">5,540</span></div>
+                                    <div class="flex items-center gap-2"><span class="text-[10px] font-mono text-slate-500 w-28 shrink-0">Financial Records</span><div class="flex-1 prog-bar"><div class="prog-fill bg-red-500" style="width:40%"></div></div><span class="font-mono text-xs text-slate-400 w-12 text-right">2,310</span></div>
+                                </div>
+                                <div class="mt-3 pt-3 border-t border-slate-800 flex justify-between items-center">
+                                    <span class="text-xs text-slate-500">Total PII records</span>
+                                    <span class="font-mono text-base font-bold text-teal-400">23,309</span>
+                                </div>
+                            </div>
+                            <!-- Compliance heatmap matrix -->
+                            <div class="card p-5">
+                                <h3 class="font-heading text-sm font-bold mb-1">DPDPA Controls × Business Units</h3>
+                                <p class="text-[10px] text-slate-500 font-mono mb-3">Color-coded: Green=Pass · Yellow=Partial · Orange=Gap · Red=Fail</p>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-[9px] font-mono border-separate border-spacing-0.5">
+                                        <thead><tr>
+                                            <th class="text-left text-slate-600 pb-1 w-24">Control</th>
+                                            <th class="text-center text-slate-600 pb-1">Ops</th>
+                                            <th class="text-center text-slate-600 pb-1">Mktg</th>
+                                            <th class="text-center text-slate-600 pb-1">Fin</th>
+                                            <th class="text-center text-slate-600 pb-1">IT</th>
+                                            <th class="text-center text-slate-600 pb-1">HR</th>
+                                            </tr></thead>
+                                        <tbody id="control-heatmap-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Expandable section: Secondary details -->
+                        <div class="card p-4">
+                            <div class="expand-toggle flex items-center justify-between" onclick="toggleExpand('exp-secondary')">
+                                <h3 class="font-heading text-sm font-bold flex items-center gap-2">📋 Expired Consents & Threshold Breaches <span class="badge badge-critical">4 items</span></h3>
+                                <span class="text-slate-500 text-xs font-mono" id="exp-secondary-icon">▼ Expand</span>
+                            </div>
+                            <div class="expand-body" id="exp-secondary">
+                                <div class="section-sep"></div>
+                                <div class="grid-2col gap-4">
+                                    <div>
+                                        <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-2">Expired Consents</p>
+                                        <div class="space-y-2">
+                                            <div class="flex items-center gap-2 bg-slate-900/60 rounded-lg p-2.5 border border-red-900/30">
+                                                <span class="sev-dot sev-critical flex-shrink-0"></span>
+                                                <span class="text-xs text-slate-300 flex-1">Akash Singh · Credit Scoring · Aug 2024</span>
+                                                <span class="badge badge-critical">Halt</span>
+                                            </div>
+                                            <div class="flex items-center gap-2 bg-slate-900/60 rounded-lg p-2.5 border border-red-900/30">
+                                                <span class="sev-dot sev-critical flex-shrink-0"></span>
+                                                <span class="text-xs text-slate-300 flex-1">Deepak Mehta · Insurance · Apr 2024</span>
+                                                <span class="badge badge-critical">Halt</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-2">Threshold Breaches</p>
+                                        <div class="space-y-2">
+                                            <div class="flex items-center gap-2 bg-slate-900/60 rounded-lg p-2.5 border border-amber-900/30">
+                                                <span class="sev-dot sev-high flex-shrink-0"></span>
+                                                <span class="text-xs text-slate-300 flex-1">Marketing PAN access · 8.7/10 risk</span>
+                                                <span class="badge badge-pending">Review</span>
+                                            </div>
+                                            <div class="flex items-center gap-2 bg-slate-900/60 rounded-lg p-2.5 border border-amber-900/30">
+                                                <span class="sev-dot sev-high flex-shrink-0"></span>
+                                                <span class="text-xs text-slate-300 flex-1">Operations 2FA gap · 9.2/10 risk</span>
+                                                <span class="badge badge-pending">Review</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Live monitor strip -->
+                        <div class="card p-5">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="font-heading text-sm font-bold flex items-center gap-2">📡 Live Data Flow Monitor <span class="flex items-center gap-1 text-[10px] font-mono text-teal-400"><span class="sev-dot sev-low animate-pulse"></span>WebSocket Active</span></h3>
+                            </div>
+                            <div class="grid-kpi gap-3 mb-3">
+                                <div class="bg-slate-900/60 rounded-xl p-3 border border-slate-800 text-center"><div class="font-mono text-lg font-bold text-teal-400" id="flow-app">243</div><div class="text-[9px] text-slate-500">Applications</div></div>
+                                <div class="bg-slate-900/60 rounded-xl p-3 border border-slate-800 text-center"><div class="font-mono text-lg font-bold text-indigo-400" id="flow-db">18</div><div class="text-[9px] text-slate-500">Databases</div></div>
+                                <div class="bg-slate-900/60 rounded-xl p-3 border border-slate-800 text-center"><div class="font-mono text-lg font-bold text-pink-400" id="flow-api">1.2K</div><div class="text-[9px] text-slate-500">API/min</div></div>
+                                <div class="bg-slate-900/60 rounded-xl p-3 border border-red-900/30 text-center"><div class="font-mono text-lg font-bold text-red-400" id="flow-alert">3</div><div class="text-[9px] text-slate-500">Anomalies</div></div>
+                            </div>
+                            <div class="bg-slate-900/60 rounded-xl p-3 border border-slate-800 h-20 overflow-y-auto text-[10px] font-mono space-y-1" id="flow-feed">
+                                <div class="text-slate-400"><span class="text-teal-400">09:41:02</span> Consent granted · DP-00892 · Loan Processing</div>
+                                <div class="text-slate-400"><span class="text-amber-400">09:40:58</span> Data export · Marketing · 440 PAN records</div>
+                                <div class="text-slate-400"><span class="text-red-400">09:40:45</span> Vendor anomaly · RapidVerification · 3 unauthorized calls</div>
+                            </div>
+                        </div>
+
+                        <!-- DSAR + API Security -->
+                        <div class="grid-2col gap-4">
+                            <div class="card p-5">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="font-heading text-sm font-bold">👤 DSAR Queue</h3>
+                                    <span class="badge badge-critical">3 Urgent</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-2 bg-slate-900/60 rounded-lg p-2.5 border border-slate-800 text-xs">
+                                        <span class="sev-dot sev-critical flex-shrink-0"></span>
+                                        <span class="font-mono text-teal-400 w-16 shrink-0">DSR-0085</span>
+                                        <span class="text-slate-300 flex-1">Anita Sharma · Withdrawal</span>
+                                        <span class="badge badge-critical">SLA!</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-slate-900/60 rounded-lg p-2.5 border border-slate-800 text-xs">
+                                        <span class="sev-dot sev-high flex-shrink-0"></span>
+                                        <span class="font-mono text-teal-400 w-16 shrink-0">DSR-0088</span>
+                                        <span class="text-slate-300 flex-1">Mohan Tiwari · Deletion</span>
+                                        <span class="badge badge-pending">In Progress</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-slate-900/60 rounded-lg p-2.5 border border-slate-800 text-xs">
+                                        <span class="sev-dot sev-low flex-shrink-0"></span>
+                                        <span class="font-mono text-teal-400 w-16 shrink-0">DSR-0087</span>
+                                        <span class="text-slate-300 flex-1">Kavitha Raman · Access</span>
+                                        <span class="badge badge-done">Completed</span>
+                                    </div>
+                                </div>
+                                <div class="flex gap-1.5 mt-3 text-[9px] font-mono text-slate-500 flex-wrap">
+                                    <span class="bg-slate-800 px-2 py-1 rounded">Received</span><span>→</span>
+                                    <span class="bg-slate-800 px-2 py-1 rounded">Assigned</span><span>→</span>
+                                    <span class="bg-teal-900/40 text-teal-400 px-2 py-1 rounded border border-teal-800">Investigating</span><span>→</span>
+                                    <span class="bg-slate-800 px-2 py-1 rounded">Completed</span>
+                                </div>
+                            </div>
+                            <div class="card p-5">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="font-heading text-sm font-bold">🔌 API Security</h3>
+                                    <span class="badge badge-done">Live</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 mb-3">
+                                    <div class="bg-slate-900/60 rounded-lg p-3 border border-slate-800 text-center"><div class="font-mono text-base font-bold text-teal-400">1,247</div><div class="text-[9px] text-slate-500">Req/min</div></div>
+                                    <div class="bg-slate-900/60 rounded-lg p-3 border border-red-900/30 text-center"><div class="font-mono text-base font-bold text-red-400">23</div><div class="text-[9px] text-slate-500">Unauthorized</div></div>
+                                    <div class="bg-slate-900/60 rounded-lg p-3 border border-amber-900/30 text-center"><div class="font-mono text-base font-bold text-amber-400">5</div><div class="text-[9px] text-slate-500">Token Expiring</div></div>
+                                    <div class="bg-slate-900/60 rounded-lg p-3 border border-slate-800 text-center"><div class="font-mono text-base font-bold text-slate-300">99.2%</div><div class="text-[9px] text-slate-500">Uptime</div></div>
+                                </div>
+                                <div class="space-y-1 text-[10px] font-mono text-slate-400">
+                                    <div class="flex justify-between"><span>Consent API</span><span class="text-teal-400">✓ Healthy</span></div>
+                                    <div class="flex justify-between"><span>Vendor API</span><span class="text-amber-400">⚠ Rate Limited</span></div>
+                                    <div class="flex justify-between"><span>Discovery API</span><span class="text-teal-400">✓ Healthy</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: AI Agents -->
+                    <div id="tab-agents" class="dash-tab hidden space-y-5">
+                        <div class="card p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-heading text-base font-bold">AI Agent Pipeline — Azure AI Foundry</h3>
+                                <span class="badge badge-done"><span class="sev-dot sev-low mr-1"></span>5 Agents Active</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-6">
+                                <div class="card p-4 text-center kpi-accent-teal"><div class="text-2xl mb-2">🔍</div><h4 class="font-heading text-xs font-bold mb-1">Data Discovery</h4><span class="badge badge-done">Active</span><p class="text-[9px] text-slate-500 mt-2 font-mono">4,218 records</p></div>
+                                <div class="card p-4 text-center kpi-accent-indigo"><div class="text-2xl mb-2">✅</div><h4 class="font-heading text-xs font-bold mb-1">Consent Verify</h4><span class="badge badge-progress">Processing</span><p class="text-[9px] text-slate-500 mt-2 font-mono">2,847 valid</p></div>
+                                <div class="card p-4 text-center kpi-accent-amber"><div class="text-2xl mb-2">⚠️</div><h4 class="font-heading text-xs font-bold mb-1">Risk Assessment</h4><span class="badge badge-critical">Alert</span><p class="text-[9px] text-slate-500 mt-2 font-mono">4 high risks</p></div>
+                                <div class="card p-4 text-center"><div class="text-2xl mb-2">💬</div><h4 class="font-heading text-xs font-bold mb-1">AI Copilot</h4><span class="badge badge-pending">Idle</span><p class="text-[9px] text-slate-500 mt-2 font-mono">34 queries</p></div>
+                                <div class="card p-4 text-center kpi-accent-red"><div class="text-2xl mb-2">🔥</div><h4 class="font-heading text-xs font-bold mb-1">Incident Resp.</h4><span class="badge badge-critical">Alert</span><p class="text-[9px] text-slate-500 mt-2 font-mono">3 incidents</p></div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="bg-slate-900/60 border border-teal-900/40 rounded-xl p-4"><div class="text-sm font-bold mb-1">🏭 Foundry IQ</div><p class="text-xs text-slate-400 mb-2">Agent orchestration · AI reasoning</p><span class="badge badge-done">Operational</span></div>
+                                <div class="bg-slate-900/60 border border-indigo-900/40 rounded-xl p-4"><div class="text-sm font-bold mb-1">🧵 Fabric IQ</div><p class="text-xs text-slate-400 mb-2">Data governance · Analytics</p><span class="badge badge-done">Operational</span></div>
+                                <div class="bg-slate-900/60 border border-slate-700 rounded-xl p-4"><div class="text-sm font-bold mb-1">💼 Work IQ</div><p class="text-xs text-slate-400 mb-2">Teams · Outlook · SharePoint</p><span class="badge badge-pending">Configured</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Data Discovery -->
+                    <div id="tab-discovery" class="dash-tab hidden space-y-4">
+                        <div class="card p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-heading text-base font-bold">Data Discovery & Classification</h3>
+                                <button id="scanner-action-btn" onclick="runDataScan()" class="action-btn action-btn-primary">🔍 Run Discovery Agent</button>
+                            </div>
+                            <div id="scanner-progress-container" class="hidden mb-4">
+                                <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Scanning repositories…</span><span class="font-mono text-teal-400">0%</span></div>
+                                <div class="prog-bar"><div class="prog-fill bg-teal-500 transition-all duration-500" id="scanner-progress-bar" style="width:0%"></div></div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs">
+                                    <thead><tr class="border-b border-slate-800">
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Source File</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Data Type</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Count</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Risk</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Status</th>
+                                        </tr></thead>
+                                    <tbody id="scanned-records-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Consent Manager -->
+                    <div id="tab-consent" class="dash-tab hidden space-y-4">
+                        <div class="grid-kpi gap-4 mb-4">
+                            <div class="card p-4 kpi-accent-teal text-center"><div class="font-mono text-2xl font-bold text-teal-400">3,126</div><div class="text-[9px] text-slate-500 mt-1 font-mono uppercase">Total Consents</div></div>
+                            <div class="card p-4 kpi-accent-teal text-center"><div class="font-mono text-2xl font-bold text-teal-400">2,847</div><div class="text-[9px] text-slate-500 mt-1 font-mono uppercase">Valid & Active</div></div>
+                            <div class="card p-4 kpi-accent-amber text-center"><div class="font-mono text-2xl font-bold text-amber-400">183</div><div class="text-[9px] text-slate-500 mt-1 font-mono uppercase">Expiring (30d)</div></div>
+                            <div class="card p-4 kpi-accent-red text-center"><div class="font-mono text-2xl font-bold text-red-400">96</div><div class="text-[9px] text-slate-500 mt-1 font-mono uppercase">Expired</div></div>
+                        </div>
+                        <div class="card p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-heading text-base font-bold">Consent Records</h3>
+                                <button onclick="showToast('Adding consent record…','info')" class="action-btn action-btn-primary">+ Add Consent</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs">
+                                    <thead><tr class="border-b border-slate-800">
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">ID</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Principal</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Purpose</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Status</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Updated</th>
+                                        </tr></thead>
+                                    <tbody id="consents-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Risk Assessment -->
+                    <div id="tab-risk" class="dash-tab hidden space-y-4">
+                        <div class="grid-kpi gap-4 mb-4">
+                            <div class="card p-4 kpi-accent-red text-center"><div class="font-mono text-2xl font-bold text-red-400">6.4</div><div class="text-[9px] text-slate-500 mt-1 font-mono uppercase">Org Risk Score</div></div>
+                            <div class="card p-4 kpi-accent-red text-center"><div class="font-mono text-2xl font-bold text-red-400">4</div><div class="text-[9px] text-slate-500 mt-1 font-mono uppercase">Critical Risks</div></div>
+                            <div class="card p-4 kpi-accent-amber text-center"><div class="font-mono text-2xl font-bold text-amber-400">11</div><div class="text-[9px] text-slate-500 mt-1 font-mono uppercase">Medium Risks</div></div>
+                            <div class="card p-4 kpi-accent-teal text-center"><div class="font-mono text-2xl font-bold text-teal-400">18</div><div class="text-[9px] text-slate-500 mt-1 font-mono uppercase">Resolved (30d)</div></div>
+                        </div>
+                        <div class="card p-5">
+                            <h3 class="font-heading text-sm font-bold mb-4">Top Risk Items</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs">
+                                    <thead><tr class="border-b border-slate-800">
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Risk</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Department</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Score</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Severity</th>
+                                        </tr></thead>
+                                    <tbody>
+                                        <tr class="border-b border-slate-800/40 hover:bg-slate-900/30 transition-colors"><td class="py-3 px-3 text-slate-300">Aadhaar accessed without 2FA</td><td class="py-3 px-3 text-slate-400">Operations</td><td class="py-3 px-3"><span class="font-mono font-bold text-red-400">9.2</span></td><td class="py-3 px-3"><span class="badge badge-critical">Critical</span></td></tr>
+                                        <tr class="border-b border-slate-800/40 hover:bg-slate-900/30 transition-colors"><td class="py-3 px-3 text-slate-300">PAN exported to unencrypted CSV</td><td class="py-3 px-3 text-slate-400">Marketing</td><td class="py-3 px-3"><span class="font-mono font-bold text-red-400">8.7</span></td><td class="py-3 px-3"><span class="badge badge-critical">Critical</span></td></tr>
+                                        <tr class="border-b border-slate-800/40 hover:bg-slate-900/30 transition-colors"><td class="py-3 px-3 text-slate-300">Financial records retained beyond limit</td><td class="py-3 px-3 text-slate-400">Finance</td><td class="py-3 px-3"><span class="font-mono font-bold text-red-400">8.1</span></td><td class="py-3 px-3"><span class="badge badge-critical">Critical</span></td></tr>
+                                        <tr class="border-b border-slate-800/40 hover:bg-slate-900/30 transition-colors"><td class="py-3 px-3 text-slate-300">Bank data shared with 3rd party</td><td class="py-3 px-3 text-slate-400">Partnerships</td><td class="py-3 px-3"><span class="font-mono font-bold text-amber-400">7.9</span></td><td class="py-3 px-3"><span class="badge badge-pending">High</span></td></tr>
+                                        <tr class="hover:bg-slate-900/30 transition-colors"><td class="py-3 px-3 text-slate-300">Consent expired – still processing</td><td class="py-3 px-3 text-slate-400">Loan Processing</td><td class="py-3 px-3"><span class="font-mono font-bold text-amber-400">6.4</span></td><td class="py-3 px-3"><span class="badge badge-pending">Medium</span></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Violations -->
+                    <div id="tab-violations" class="dash-tab hidden space-y-4">
+                        <div class="card p-5">
+                            <h3 class="font-heading text-base font-bold mb-4">DPDPA Violations <span class="badge badge-critical ml-2">7 Open</span></h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs">
+                                    <thead><tr class="border-b border-slate-800">
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">ID</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Violation</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Section</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Dept</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Severity</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Status</th>
+                                        </tr></thead>
+                                    <tbody>
+                                        <tr class="border-b border-slate-800/40 hover:bg-slate-900/30 transition-colors"><td class="py-3 px-3 font-mono text-red-400">VIO-001</td><td class="py-3 px-3 text-slate-300">Processing Aadhaar without valid consent</td><td class="py-3 px-3 font-mono text-slate-500">§7, §8</td><td class="py-3 px-3 text-slate-400">Operations</td><td class="py-3 px-3"><span class="badge badge-critical">Critical</span></td><td class="py-3 px-3"><span class="badge badge-critical">Open</span></td></tr>
+                                        <tr class="border-b border-slate-800/40 hover:bg-slate-900/30 transition-colors"><td class="py-3 px-3 font-mono text-red-400">VIO-002</td><td class="py-3 px-3 text-slate-300">PAN data transferred without DPA</td><td class="py-3 px-3 font-mono text-slate-500">§9</td><td class="py-3 px-3 text-slate-400">Marketing</td><td class="py-3 px-3"><span class="badge badge-critical">Critical</span></td><td class="py-3 px-3"><span class="badge badge-critical">Open</span></td></tr>
+                                        <tr class="border-b border-slate-800/40 hover:bg-slate-900/30 transition-colors"><td class="py-3 px-3 font-mono text-amber-400">VIO-003</td><td class="py-3 px-3 text-slate-300">Data retained beyond purpose limit</td><td class="py-3 px-3 font-mono text-slate-500">§8(7)</td><td class="py-3 px-3 text-slate-400">Finance</td><td class="py-3 px-3"><span class="badge badge-pending">High</span></td><td class="py-3 px-3"><span class="badge badge-progress">In Review</span></td></tr>
+                                        <tr class="border-b border-slate-800/40 hover:bg-slate-900/30 transition-colors"><td class="py-3 px-3 font-mono text-amber-400">VIO-004</td><td class="py-3 px-3 text-slate-300">No privacy notice at collection point</td><td class="py-3 px-3 font-mono text-slate-500">§5</td><td class="py-3 px-3 text-slate-400">Customer Svc</td><td class="py-3 px-3"><span class="badge badge-pending">High</span></td><td class="py-3 px-3"><span class="badge badge-critical">Open</span></td></tr>
+                                        <tr class="hover:bg-slate-900/30 transition-colors"><td class="py-3 px-3 font-mono text-slate-400">VIO-005</td><td class="py-3 px-3 text-slate-300">DSR not fulfilled within 30 days</td><td class="py-3 px-3 font-mono text-slate-500">§11</td><td class="py-3 px-3 text-slate-400">IT</td><td class="py-3 px-3"><span class="badge badge-progress">Medium</span></td><td class="py-3 px-3"><span class="badge badge-progress">In Progress</span></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Incidents -->
+                    <div id="tab-incidents" class="dash-tab hidden space-y-4">
+                        <div class="grid-kpi gap-4 mb-2">
+                            <div class="card p-4 kpi-accent-red text-center"><div class="font-mono text-2xl font-bold text-red-400">3</div><div class="text-[9px] text-slate-500 mt-1 font-mono uppercase">Open Incidents</div></div>
+                            <div class="card p-4 kpi-accent-red text-center"><div class="font-mono text-2xl font-bold text-red-400">1</div><div class="text-[9px] text-slate-500 mt-1 font-mono uppercase">Critical</div></div>
+                            <div class="card p-4 kpi-accent-teal text-center"><div class="font-mono text-2xl font-bold text-teal-400">14</div><div class="text-[9px] text-slate-500 mt-1 font-mono uppercase">Resolved (30d)</div></div>
+                            <div class="card p-4 kpi-accent-amber text-center"><div class="font-mono text-2xl font-bold text-amber-400">4.2h</div><div class="text-[9px] text-slate-500 mt-1 font-mono uppercase">Avg MTTR</div></div>
+                        </div>
+                        <div class="grid-2col gap-4">
+                            <div class="card p-5">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="font-heading text-sm font-bold">Incident Queue</h3>
+                                    <button onclick="registerNewIncident()" class="action-btn action-btn-danger">+ Raise Incident</button>
+                                </div>
+                                <div class="space-y-3" id="incidents-list-container-tab">
+                                    <!-- Filled by renderIncidents() -->
+                                </div>
+                            </div>
+                            <div class="card p-5">
+                                <h3 class="font-heading text-sm font-bold mb-4">INC-001 · Response Workflow</h3>
+                                <div class="space-y-3">
+                                    <div class="flex gap-3 pb-3 border-b border-slate-800"><div class="w-6 h-6 rounded-full bg-teal-600 flex items-center justify-center text-xs flex-shrink-0">✓</div><div><p class="text-xs font-semibold text-slate-200">Breach Detected</p><p class="text-[10px] text-slate-500">Auto-detected by Incident Response Agent · 08:34</p></div><span class="badge badge-done ml-auto">Done</span></div>
+                                    <div class="flex gap-3 pb-3 border-b border-slate-800"><div class="w-6 h-6 rounded-full bg-teal-600 flex items-center justify-center text-xs flex-shrink-0">✓</div><div><p class="text-xs font-semibold text-slate-200">DPO Notified</p><p class="text-[10px] text-slate-500">Teams alert sent · 08:35</p></div><span class="badge badge-done ml-auto">Done</span></div>
+                                    <div class="flex gap-3 pb-3 border-b border-slate-800"><div class="w-6 h-6 rounded-full bg-amber-600 flex items-center justify-center text-xs flex-shrink-0">⋯</div><div><p class="text-xs font-semibold text-slate-200">Containment Actions</p><p class="text-[10px] text-amber-400">In Progress · 2 accounts revoked</p></div><span class="badge badge-progress ml-auto">Active</span></div>
+                                    <div class="flex gap-3 pb-3 border-b border-slate-800 opacity-50"><div class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-xs flex-shrink-0">4</div><div><p class="text-xs font-semibold text-slate-400">DPBI Notification</p><p class="text-[10px] text-slate-500">Draft ready — review required</p></div><span class="badge badge-pending ml-auto">Pending</span></div>
+                                    <div class="flex gap-3 opacity-50"><div class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-xs flex-shrink-0">5</div><div><p class="text-xs font-semibold text-slate-400">Resolution & Closure</p><p class="text-[10px] text-slate-500">Pending</p></div><span class="badge badge-pending ml-auto">Pending</span></div>
+                                </div>
+                                <div class="action-group mt-4">
+                                    <button onclick="showToast('DPBI notification draft generated.','success')" class="action-btn action-btn-primary flex-1 justify-center">📝 Draft Notification <span class="badge badge-pending ml-1">Pending</span></button>
+                                    <button onclick="showToast('Incident report exported.','info')" class="action-btn action-btn-ghost">Export</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: DSAR -->
+                    <div id="tab-dsar" class="dash-tab hidden space-y-4">
+                        <div class="card p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-heading text-base font-bold">Data Subject Access Requests <span class="badge badge-critical ml-2">12 Open</span></h3>
+                                <button onclick="showToast('New DSAR request created.','success')" class="action-btn action-btn-primary">+ New Request</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs">
+                                    <thead><tr class="border-b border-slate-800">
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">ID</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Principal</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Type</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">SLA Due</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Status</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Action</th>
+                                        </tr></thead>
+                                    <tbody>
+                                        <tr class="border-b border-slate-800/40 hover:bg-slate-900/30 transition-colors"><td class="py-3 px-3 font-mono text-red-400">DSR-0085</td><td class="py-3 px-3 text-slate-300">Anita Sharma</td><td class="py-3 px-3 text-red-400">🚫 Withdrawal</td><td class="py-3 px-3 font-mono text-red-400">10 Jun 2026 🔴</td><td class="py-3 px-3"><span class="badge badge-critical">SLA Risk</span></td><td class="py-3 px-3"><button onclick="showToast('DSR-0085 escalated.','error')" class="action-btn action-btn-danger py-1 text-[10px]">Escalate</button></td></tr>
+                                        <tr class="border-b border-slate-800/40 hover:bg-slate-900/30 transition-colors"><td class="py-3 px-3 font-mono text-amber-400">DSR-0088</td><td class="py-3 px-3 text-slate-300">Mohan Tiwari</td><td class="py-3 px-3 text-red-400">🗑️ Deletion</td><td class="py-3 px-3 font-mono text-amber-400">30 Jun 2026 ⚠️</td><td class="py-3 px-3"><span class="badge badge-progress">In Progress</span></td><td class="py-3 px-3"><button onclick="showToast('DSR-0088 fulfilled.','success')" class="action-btn action-btn-primary py-1 text-[10px]">Fulfill</button></td></tr>
+                                        <tr class="hover:bg-slate-900/30 transition-colors"><td class="py-3 px-3 font-mono text-teal-400">DSR-0087</td><td class="py-3 px-3 text-slate-300">Kavitha Raman</td><td class="py-3 px-3 text-teal-400">📋 Access</td><td class="py-3 px-3 font-mono text-teal-400">27 Jun 2026</td><td class="py-3 px-3"><span class="badge badge-done">Fulfilled</span></td><td class="py-3 px-3"><button class="action-btn action-btn-ghost py-1 text-[10px]">View</button></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Vendor Risk -->
+                    <div id="tab-vendors" class="dash-tab hidden space-y-4">
+                        <div class="card p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-heading text-base font-bold">Vendor Risk Management</h3>
+                                <button onclick="addNewVendor()" class="action-btn action-btn-primary">+ Register Vendor</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs">
+                                    <thead><tr class="border-b border-slate-800">
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Vendor</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Type</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Score</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">DPA</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Risk</th>
+                                        <th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase tracking-wide">Action</th>
+                                        </tr></thead>
+                                    <tbody id="vendors-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: AI Copilot -->
+                    <div id="tab-copilot" class="dash-tab hidden space-y-4">
+                        <div class="card overflow-hidden" style="height:560px;display:flex;flex-direction:column">
+                            <div class="p-4 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+                                <div class="flex items-center gap-2"><span class="text-xl">💬</span><div><h3 class="font-heading text-sm font-bold">DPDPA Guardian AI Copilot</h3><p class="text-[10px] font-mono text-teal-400">RAG · DPDPA 2023 Knowledge Base · 12,400 chunks</p></div></div>
+                                <span class="badge badge-done"><span class="sev-dot sev-low mr-1"></span>Online</span>
+                            </div>
+                            <div class="flex-1 overflow-y-auto p-4 space-y-3" id="chat-messages-container"></div>
+                            <form onsubmit="handleSendMessage(event)" class="p-3 border-t border-slate-800 flex gap-2 flex-shrink-0">
+                                <input id="chat-input" placeholder="Ask about DPDPA sections, violations, consent requirements…"
+                                       class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-teal-500 transition-colors placeholder-slate-600">
+                                <button type="submit" class="action-btn action-btn-primary px-4">Send →</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Analytics -->
+                    <div id="tab-analytics" class="dash-tab hidden space-y-4">
+                        <div class="card p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-heading text-base font-bold">AI Risk Prediction Engine</h3>
+                                <div class="action-group">
+                                    <button onclick="runAIPrediction(30)" class="action-btn action-btn-primary py-1.5 text-[10px]">30d</button>
+                                    <button onclick="runAIPrediction(60)" class="action-btn action-btn-ghost py-1.5 text-[10px]">60d</button>
+                                    <button onclick="runAIPrediction(90)" class="action-btn action-btn-ghost py-1.5 text-[10px]">90d</button>
+                                    <button onclick="runAIPrediction(180)" class="action-btn action-btn-ghost py-1.5 text-[10px]">180d</button>
+                                </div>
+                            </div>
+                            <div class="grid-kpi gap-4 mb-5">
+                                <div class="card p-4 text-center"><p class="text-[9px] font-mono text-slate-500 uppercase mb-2">Compliance Score</p><div class="text-2xl font-mono font-bold text-teal-400" id="pred-score">82</div><p class="text-[9px] text-teal-500 mt-1">↑ Projected in 30d</p></div>
+                                <div class="card p-4 text-center"><p class="text-[9px] font-mono text-slate-500 uppercase mb-2">Violation Risk</p><div class="text-2xl font-mono font-bold text-amber-400" id="pred-violation">4</div><p class="text-[9px] text-amber-500 mt-1">Predicted new violations</p></div>
+                                <div class="card p-4 text-center"><p class="text-[9px] font-mono text-slate-500 uppercase mb-2">Breach Probability</p><div class="text-2xl font-mono font-bold text-red-400" id="pred-breach">12%</div><p class="text-[9px] text-red-500 mt-1">Based on current patterns</p></div>
+                                <div class="card p-4 text-center"><p class="text-[9px] font-mono text-slate-500 uppercase mb-2">Vendor Risk Index</p><div class="text-2xl font-mono font-bold text-indigo-400" id="pred-vendor">6.4</div><p class="text-[9px] text-indigo-500 mt-1">Avg vendor risk score</p></div>
+                            </div>
+                            <!-- SVG trend chart -->
+                            <div class="bg-slate-900/60 rounded-xl p-4 border border-slate-800">
+                                <p class="text-[10px] font-mono text-slate-500 uppercase tracking-wide mb-3">Compliance Score Trend + Risk Score (Last 90 Days)</p>
+                                <svg viewBox="0 0 600 120" class="w-full" preserveAspectRatio="none">
+                                    <defs>
+                                        <linearGradient id="ag2" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stop-color="#14b8a6" stop-opacity=".4"/>
+                                            <stop offset="100%" stop-color="#14b8a6" stop-opacity="0"/>
+                                        </linearGradient>
+                                        <linearGradient id="ag3" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stop-color="#f43f5e" stop-opacity=".3"/>
+                                            <stop offset="100%" stop-color="#f43f5e" stop-opacity="0"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <path fill="url(#ag2)" d="M0,80 L100,68 L200,55 L300,45 L400,38 L500,30 L600,22 L600,120 L0,120 Z"/>
+                                    <path fill="none" stroke="#14b8a6" stroke-width="2" stroke-linecap="round" d="M0,80 L100,68 L200,55 L300,45 L400,38 L500,30 L600,22"/>
+                                    <path fill="url(#ag3)" d="M0,40 L100,48 L200,45 L300,50 L400,55 L500,52 L600,48 L600,120 L0,120 Z" opacity=".4"/>
+                                    <path fill="none" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="4,3" d="M0,40 L100,48 L200,45 L300,50 L400,55 L500,52 L600,48"/>
+                                    <circle cx="600" cy="22" r="3" fill="#14b8a6"/>
+                                    <circle cx="600" cy="48" r="3" fill="#f43f5e"/>
+                                </svg>
+                                <div class="flex gap-4 mt-2 text-[10px] font-mono"><span class="flex items-center gap-1.5 text-teal-400"><span class="w-4 h-0.5 bg-teal-400 inline-block rounded"></span>Compliance Score</span><span class="flex items-center gap-1.5 text-red-400"><span class="w-4 h-0.5 bg-red-400 inline-block rounded border-dashed"></span>Risk Score</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Configuration -->
+                    <div id="tab-config" class="dash-tab hidden space-y-4">
+                        <div class="card p-5">
+                            <div class="flex items-center justify-between mb-5">
+                                <h3 class="font-heading text-base font-bold">⚙️ Dynamic Configuration Center</h3>
+                                <button onclick="showToast('Configuration saved.','success')" class="action-btn action-btn-primary">💾 Save All <span class="badge badge-pending ml-1">Unsaved</span></button>
+                            </div>
+                            <div class="grid-3col gap-5">
+                                <div>
+                                    <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">Organization</p>
+                                    <div class="space-y-3">
+                                        <select class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-teal-500"><option>Data Fiduciary – Significant</option><option>Data Fiduciary – Standard</option><option>Data Processor</option></select>
+                                        <input class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-teal-500" placeholder="DPO Name" value="Ananya Rao">
+                                        <input class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-teal-500" placeholder="DPO Email" value="dpo@hdfc.com">
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">Environment & Cloud</p>
+                                    <div class="space-y-3">
+                                        <select class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-teal-500"><option>Region: ap-south-1 (Mumbai)</option><option>Region: ap-southeast-1 (Singapore)</option></select>
+                                        <select class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-teal-500"><option>Cloud: Microsoft Azure</option><option>Cloud: AWS</option><option>Cloud: GCP</option><option>Cloud: Private DC</option></select>
+                                        <input class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-teal-500" placeholder="Retention Policy" value="90-day retention">
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">Compliance Controls</p>
+                                    <div class="space-y-2.5">
+                                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="checkbox" checked class="accent-teal-500 w-4 h-4"><span class="text-xs text-slate-300">DPDPA 2023 Controls</span><span class="badge badge-done ml-auto">On</span></label>
+                                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="checkbox" checked class="accent-teal-500 w-4 h-4"><span class="text-xs text-slate-300">RBI Data Localisation</span><span class="badge badge-done ml-auto">On</span></label>
+                                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="checkbox" checked class="accent-teal-500 w-4 h-4"><span class="text-xs text-slate-300">CERT-IN Reporting</span><span class="badge badge-done ml-auto">On</span></label>
+                                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="checkbox" class="accent-teal-500 w-4 h-4"><span class="text-xs text-slate-300">ISO 27001:2022</span><span class="badge badge-pending ml-auto">Off</span></label>
+                                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="checkbox" class="accent-teal-500 w-4 h-4"><span class="text-xs text-slate-300">SOC 2 Type II</span><span class="badge badge-pending ml-auto">Off</span></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="section-sep"></div>
+                            <div class="grid-2col gap-5">
+                                <div>
+                                    <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">Security Ops</p>
+                                    <div class="space-y-2">
+                                        <div class="flex items-center justify-between bg-slate-900 rounded-lg p-3 border border-red-900/30"><span class="text-xs text-slate-300">Login Anomaly (Geo)</span><span class="badge badge-critical">rekha.m · Berlin</span></div>
+                                        <div class="flex items-center justify-between bg-slate-900 rounded-lg p-3 border border-slate-800"><span class="text-xs text-slate-300">MFA Coverage</span><span class="font-mono text-xs text-teal-400">94% (47/50)</span></div>
+                                        <div class="flex items-center justify-between bg-slate-900 rounded-lg p-3 border border-slate-800"><span class="text-xs text-slate-300">SIEM Connected</span><span class="font-mono text-xs text-teal-400">Splunk ✓ Sentinel ✓</span></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">Integration Marketplace</p>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <div class="bg-slate-900 rounded-lg p-2 border border-teal-900/30 text-center text-[9px] font-mono text-teal-400">✓ Azure</div>
+                                        <div class="bg-slate-900 rounded-lg p-2 border border-teal-900/30 text-center text-[9px] font-mono text-teal-400">✓ M365</div>
+                                        <div class="bg-slate-900 rounded-lg p-2 border border-teal-900/30 text-center text-[9px] font-mono text-teal-400">✓ Sentinel</div>
+                                        <div class="bg-slate-900 rounded-lg p-2 border border-teal-900/30 text-center text-[9px] font-mono text-teal-400">✓ Splunk</div>
+                                        <div class="bg-slate-900 rounded-lg p-2 border border-amber-900/30 text-center text-[9px] font-mono text-amber-400">~ AWS</div>
+                                        <div class="bg-slate-900 rounded-lg p-2 border border-slate-700 text-center text-[9px] font-mono text-slate-500">+ Jira</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </main>
+            </div><!-- end dashboard-shell -->
+
+            <!-- Mobile bottom nav -->
+            <nav id="mobile-bottom-nav">
+                <div class="mob-nav-item active" onclick="activeSidebarTab('tab-overview');setMobileActive(this)"><span class="mob-nav-icon">📊</span>Overview</div>
+                <div class="mob-nav-item" onclick="activeSidebarTab('tab-risk');setMobileActive(this)"><span class="mob-nav-icon">⚠️</span>Risk</div>
+                <div class="mob-nav-item" onclick="activeSidebarTab('tab-incidents');setMobileActive(this)"><span class="mob-nav-icon">🔥</span>Incidents</div>
+                <div class="mob-nav-item" onclick="activeSidebarTab('tab-copilot');setMobileActive(this)"><span class="mob-nav-icon">💬</span>Copilot</div>
+                <div class="mob-nav-item" onclick="activeSidebarTab('tab-config');setMobileActive(this)"><span class="mob-nav-icon">⚙️</span>Config</div>
+            </nav>
+        </section>
+
+        <!-- ══════════════════════════════════════════════
+       VENDOR DASHBOARD VIEW
+  ══════════════════════════════════════════════ -->
+        <section id="view-vendor-dashboard" class="view-section">
+            <div class="dashboard-shell">
+                <aside id="vendor-sidebar" class="bg-slate-950 border-r border-slate-800/60 w-56 flex-shrink-0 flex flex-col p-3 gap-1">
+                    <div class="p-3 mb-2 border-b border-slate-800"><span class="font-logo text-sm font-bold text-indigo-400">Vendor Portal</span></div>
+                    <button onclick="activeSidebarTab('vtab-overview');document.querySelectorAll('.vtab-btn').forEach(b=>b.classList.remove('bg-slate-900/60','text-indigo-300'));this.classList.add('bg-slate-900/60','text-indigo-300')"
+                            class="vtab-btn text-left px-3 py-2.5 rounded-xl text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-all bg-slate-900/60 text-indigo-300">🏢 Dashboard</button>
+                    <button onclick="activeSidebarTab('vtab-vendors');document.querySelectorAll('.vtab-btn').forEach(b=>b.classList.remove('bg-slate-900/60','text-indigo-300'));this.classList.add('bg-slate-900/60','text-indigo-300')"
+                            class="vtab-btn text-left px-3 py-2.5 rounded-xl text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-all">📊 Vendor Matrix</button>
+                    <button onclick="activeSidebarTab('vtab-chat');document.querySelectorAll('.vtab-btn').forEach(b=>b.classList.remove('bg-slate-900/60','text-indigo-300'));this.classList.add('bg-slate-900/60','text-indigo-300')"
+                            class="vtab-btn text-left px-3 py-2.5 rounded-xl text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 transition-all">💬 Copilot</button>
+                    <div class="mt-auto">
+                        <button onclick="switchView('landing'); showToast('Signed out.','info')"
+                                class="w-full text-left px-3 py-2.5 rounded-xl text-xs text-slate-500 hover:text-red-400 hover:bg-red-950/20 transition-all">⬅ Sign Out</button>
+                    </div>
+                </aside>
+                <main class="dashboard-main space-y-5">
+                    <!-- Vendor header -->
+                    <div class="card p-4">
+                        <div class="flex flex-wrap items-start gap-3 justify-between">
+                            <div>
+                                <div class="flex items-center gap-2 mb-0.5"><span class="badge badge-progress">VENDOR AUTHENTICATED</span></div>
+                                <h2 class="font-heading text-lg font-bold">APEX FINTECH Third-Party Compliance Desk</h2>
+                                <p class="text-xs text-slate-400 font-mono" id="vendor-workspace-sub">Vendor Workspace · DG-78429-IND</p>
+                            </div>
+                            <div class="action-group">
+                                <button onclick="addNewVendor()" class="action-btn action-btn-primary">+ Register Sub-Processor <span class="badge badge-pending ml-1">Pending</span></button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Vendor tabs content -->
+                    <div id="vtab-overview" class="vtab space-y-4">
+                        <div class="grid-kpi gap-4">
+                            <div class="card p-4 kpi-accent-teal text-center"><div class="font-mono text-2xl font-bold text-teal-400">3</div><div class="text-[9px] font-mono text-slate-500 uppercase mt-1">Registered Vendors</div></div>
+                            <div class="card p-4 kpi-accent-teal text-center"><div class="font-mono text-2xl font-bold text-teal-400">2</div><div class="text-[9px] font-mono text-slate-500 uppercase mt-1">DPA Signed</div></div>
+                            <div class="card p-4 kpi-accent-red text-center"><div class="font-mono text-2xl font-bold text-red-400">1</div><div class="text-[9px] font-mono text-slate-500 uppercase mt-1">High Risk</div></div>
+                            <div class="card p-4 kpi-accent-amber text-center"><div class="font-mono text-2xl font-bold text-amber-400">70%</div><div class="text-[9px] font-mono text-slate-500 uppercase mt-1">Avg Compliance</div></div>
+                        </div>
+                    </div>
+                    <div id="vtab-vendors" class="vtab hidden card p-5">
+                        <div class="flex items-center justify-between mb-4"><h3 class="font-heading text-base font-bold">Sub-Processor Matrix</h3><button onclick="addNewVendor()" class="action-btn action-btn-primary">+ Add</button></div>
+                        <div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="border-b border-slate-800"><th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase">Vendor</th><th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase">Type</th><th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase">Score</th><th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase">DPA</th><th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase">Risk</th><th class="text-left py-2 px-3 text-slate-500 font-mono text-[10px] uppercase">Action</th></tr></thead><tbody id="vendors-tbody-vendor"></tbody></table></div>
+                    </div>
+                    <div id="vtab-chat" class="vtab hidden card overflow-hidden" style="height:480px;display:none;flex-direction:column">
+                        <div class="p-4 border-b border-slate-800 flex-shrink-0"><h3 class="font-heading text-sm font-bold">AI Compliance Copilot</h3></div>
+                        <div class="flex-1 overflow-y-auto p-4" id="vendor-chat-container"></div>
+                        <form onsubmit="handleSendMessage(event)" class="p-3 border-t border-slate-800 flex gap-2 flex-shrink-0">
+                            <input id="vendor-chat-input" placeholder="Ask about vendor compliance, DPA requirements…" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors placeholder-slate-600">
+                            <button type="submit" class="action-btn action-btn-primary px-4">Send</button>
+                        </form>
+                    </div>
+                </main>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════
+       JAVASCRIPT
+  ══════════════════════════════════════════════ -->
+        <script>
+            /* ── Application State ── */
+            let state = {
+                currentView: 'landing',
+                registration: {
+                    orgName: '', industry: 'Banking', orgSize: '51-500', domain: '',
+                    tenantId: '', country: 'India', state: 'Maharashtra',
+                    adminName: '', designation: 'Chief Compliance Officer',
+                    email: '', mobile: '', role: 'dpo'
+                },
+                complianceScore: 82,
+                isScanning: false,
+                dataScannerProgress: 0,
+                scannedRecords: [
+                    { id: 1, type: 'PAN Number',         path: 'db_users/billing_info',  status: 'Exposed', value: 'ABCDE12XXF' },
+                    { id: 2, type: 'Aadhaar Reference',  path: 'db_users/kyc_docs',     status: 'Exposed', value: '[Redacted]' },
+                    { id: 3, type: 'Bank Account Info',  path: 'db_partners/payouts',   status: 'Secure',  value: 'XXXXXX5678' },
+                    { id: 4, type: 'Phone Number',       path: 'db_leads/marketing',    status: 'Exposed', value: '+91 98765 XXXXX' },
+                    { id: 5, type: 'Financial Records',  path: 'db_orders/history',     status: 'Secure',  value: 'Formatted Ledger' }
+                ],
+                consents: [
+                    { id: 'C-901', principal: 'Rahul Sharma',  purpose: 'Credit Scoring & Profiling',   status: 'Active',          updated: '2026-06-10' },
+                    { id: 'C-902', principal: 'Ananya Iyer',   purpose: 'Marketing & Newsletters',       status: 'Withdrawn',       updated: '2026-06-11' },
+                    { id: 'C-903', principal: 'Vikram Patel',  purpose: 'Core Transaction Banking',      status: 'Active',          updated: '2026-06-12' },
+                    { id: 'C-904', principal: 'Sneha Reddy',   purpose: 'Third-Party Verification',     status: 'Pending Renewal', updated: '2026-01-15' }
+                ],
+                incidents: [
+                    { id: 'INC-101', title: 'Unauthorized vendor API query',                severity: 'Medium', status: 'Contained',    date: '2026-06-02' },
+                    { id: 'INC-102', title: 'Aadhaar vault credential rotation failure',    severity: 'High',   status: 'Resolved',     date: '2026-05-28' }
+                ],
+                vendors: [
+                    { id: 'V-001', name: 'FintechFlow Integrations', type: 'Payment Gateway',    compliance: 91, dpaSigned: true,  status: 'Low Risk'    },
+                    { id: 'V-002', name: 'SkyCompute Analytics',      type: 'Cloud Infrastructure', compliance: 74, dpaSigned: true,  status: 'Medium Risk' },
+                    { id: 'V-003', name: 'RapidVerification Ltd',     type: 'KYC Processor',       compliance: 45, dpaSigned: false, status: 'High Risk'   }
+                ],
+                chatMessages: [
+                    { sender: 'system', text: 'Welcome to DPDPA Guardian AI Copilot. Ask me any compliance question about India\'s Digital Personal Data Protection Act (DPDPA) 2023.' }
+                ],
+                isAiLoading: false
+            };
+
+            /* ── On Load ── */
+            window.onload = () => {
+                generateNewTenantId();
+                switchView('landing');
+                renderScannedRecords();
+                renderConsents();
+                renderIncidents();
+                renderVendors();
+                renderChat();
+                renderControlHeatmap();
+                startFlowMonitor();
+            };
+
+            /* ── Toast ── */
+            function showToast(message, type = 'info') {
+                const c = document.getElementById('toast-container');
+                const id = 'toast-' + Date.now();
+                const icons = { success: '✅', error: '🚨', info: 'ℹ️', warn: '⚠️' };
+                const div = document.createElement('div');
+                div.id = id;
+                div.className = `toast-item toast-${type}`;
+                div.innerHTML = `<span class="text-base flex-shrink-0">${icons[type]||'ℹ️'}</span><div class="flex-1"><p class="text-xs font-semibold text-slate-400 font-heading mb-0.5 uppercase tracking-wider">System</p><p class="text-sm text-slate-200">${message}</p></div><button onclick="this.parentElement.remove()" class="text-slate-500 hover:text-slate-300 text-lg leading-none">×</button>`;
+                c.appendChild(div);
+                setTimeout(() => { if (div.parentElement) { div.style.opacity='0'; div.style.transform='translateX(100%)'; div.style.transition='all .3s'; setTimeout(()=>div.remove(), 300); } }, 4500);
+            }
+
+            /* ── View switcher ── */
+            function switchView(v) {
+                state.currentView = v;
+                document.querySelectorAll('.view-section').forEach(s => { s.classList.remove('active-view'); s.style.display='none'; });
+                const el = document.getElementById('view-'+v);
+                if (el) { el.style.display='block'; requestAnimationFrame(()=>el.classList.add('active-view')); }
+                // Nav actions
+                const nav = document.getElementById('nav-actions-right');
+                if (!nav) return;
+                const envControls = document.getElementById('env-controls');
+                if (v === 'landing' || v === 'register' || v === 'login') {
+                    if (envControls) envControls.style.display = 'none';
+                    nav.innerHTML = v==='landing' ? `
+          <button onclick="switchView('login')" class="action-btn action-btn-ghost py-2 text-sm">Sign In</button>
+          <button onclick="switchView('register')" class="action-btn action-btn-primary py-2 text-sm">Start Free Trial</button>` : `
+          <button onclick="switchView('landing')" class="action-btn action-btn-ghost py-2 text-sm">← Home</button>`;
+                } else {
+                    if (envControls) envControls.style.display = 'flex';
+                    nav.innerHTML = `
+          <button onclick="switchView('landing'); showToast('Returned to Platform Home','info')" class="action-btn action-btn-ghost py-1.5 text-xs">← Home</button>`;
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            /* ── Auth ── */
+            function generateNewTenantId() {
+                const n = Math.floor(10000 + Math.random() * 90000);
+                state.registration.tenantId = `DG-${n}-IND`;
+                const el = document.getElementById('reg-tenant-id');
+                if (el) el.value = state.registration.tenantId;
+            }
+
+            function setSelectedRole(role) {
+                state.registration.role = role;
+                const dpo = document.getElementById('role-option-dpo');
+                const vnd = document.getElementById('role-option-vendor');
+                if (role === 'dpo') {
+                    dpo.className = 'cursor-pointer p-4 rounded-xl border transition-all bg-slate-950 border-teal-500 ring-1 ring-teal-500/20';
+                    vnd.className = 'cursor-pointer p-4 rounded-xl border transition-all bg-slate-950/40 border-slate-700 hover:border-indigo-600';
+                    document.getElementById('radio-role-dpo').checked = true;
+                } else {
+                    dpo.className = 'cursor-pointer p-4 rounded-xl border transition-all bg-slate-950/40 border-slate-700 hover:border-teal-500';
+                    vnd.className = 'cursor-pointer p-4 rounded-xl border transition-all bg-slate-950 border-indigo-500 ring-1 ring-indigo-500/20';
+                    document.getElementById('radio-role-vendor').checked = true;
+                }
+            }
+
+            function sendIdentityToDashboard() {
+                const name   = state.registration.adminName || 'Ananya Rao';
+                const role   = (state.registration.role || 'dpo').toUpperCase();
+                const tenant = state.registration.tenantId || '—';
+                const el = n => document.getElementById(n);
+                if (el('sidebar-avatar')) el('sidebar-avatar').textContent = name.trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+                if (el('sidebar-name')) el('sidebar-name').textContent = name;
+                if (el('sidebar-role')) el('sidebar-role').textContent = `${role} · ${tenant}`;
+                if (el('dpo-workspace-title')) el('dpo-workspace-title').textContent = `${(state.registration.orgName||'APEX FINTECH').toUpperCase()} Compliance Command Center`;
+                if (el('dpo-workspace-sub')) el('dpo-workspace-sub').textContent = `Administered by: ${name} (${role}) · Tenant: ${tenant}`;
+                if (el('vendor-workspace-sub')) el('vendor-workspace-sub').textContent = `Vendor Workspace · ${tenant}`;
+            }
+
+            async function handleRegister(e) {
+                e.preventDefault();
+                const pw = document.getElementById('reg-password').value;
+                const cp = document.getElementById('reg-confirm-password').value;
+                if (pw !== cp) { showToast('Passwords do not match!', 'error'); return; }
+                state.registration.orgName    = document.getElementById('reg-org-name').value;
+                state.registration.industry   = document.getElementById('reg-industry').value;
+                state.registration.orgSize    = document.getElementById('reg-org-size').value;
+                state.registration.domain     = document.getElementById('reg-domain').value;
+                state.registration.country    = document.getElementById('reg-country').value;
+                state.registration.state      = document.getElementById('reg-state').value;
+                state.registration.adminName  = document.getElementById('reg-admin-name').value;
+                state.registration.designation= document.getElementById('reg-designation').value;
+                state.registration.email      = document.getElementById('reg-email').value;
+                state.registration.mobile     = document.getElementById('reg-mobile').value;
+                localStorage.setItem('dg_tenant', JSON.stringify({ ...state.registration, createdAt: new Date().toISOString() }));
+                showToast('Organization account created successfully!', 'success');
+                sendIdentityToDashboard();
+                state.registration.role === 'dpo' ? switchView('dpo-dashboard') : switchView('vendor-dashboard');
+            }
+
+            function handleLogin(e) {
+                e.preventDefault();
+                const tenant = document.getElementById('login-tenant-id').value;
+                const email  = document.getElementById('login-email').value;
+                const pass   = document.getElementById('login-password').value;
+                if (!tenant || !email || !pass) { showToast('Please fill in all fields.', 'error'); return; }
+                state.registration.tenantId  = tenant;
+                state.registration.adminName = email.split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+                showToast('Authenticated securely!', 'success');
+                sendIdentityToDashboard();
+                switchView('dpo-dashboard');
+            }
+
+            function handleQuickAccess(role) {
+                state.registration.role      = role;
+                state.registration.adminName = role === 'dpo' ? 'Ananya Rao' : 'Vendor Admin';
+                showToast(`Quick login as ${role.toUpperCase()}`, 'success');
+                sendIdentityToDashboard();
+                role === 'dpo' ? switchView('dpo-dashboard') : switchView('vendor-dashboard');
+            }
+
+            /* ── Sidebar tab switcher ── */
+            function activeSidebarTab(tabId) {
+                document.querySelectorAll('.dash-tab').forEach(t => t.classList.add('hidden'));
+                const el = document.getElementById(tabId);
+                if (el) { el.classList.remove('hidden'); el.classList.add('animate-fade-up'); }
+                document.querySelectorAll('.sidebar-nav-btn').forEach(b => b.classList.remove('active-tab','bg-slate-900/60','text-teal-300'));
+                const navId = 'nav-tab-' + tabId.replace('tab-','');
+                const nb = document.getElementById(navId);
+                if (nb) nb.classList.add('active-tab','bg-slate-900/60','text-teal-300');
+            }
+            const style = document.createElement('style');
+            style.textContent = '.active-tab{background:rgba(15,23,42,.6)!important;color:#5eead4!important;border-left:2px solid #14b8a6}';
+            document.head.appendChild(style);
+
+            /* ── Vendor tab switcher ── */
+            function activeSidebarTab(tabId) {
+                // Handle both DPO tabs and vendor tabs
+                const isDashTab = tabId.startsWith('tab-');
+                const isVtab    = tabId.startsWith('vtab-');
+                if (isDashTab) {
+                    document.querySelectorAll('.dash-tab').forEach(t => t.classList.add('hidden'));
+                    const el = document.getElementById(tabId);
+                    if (el) el.classList.remove('hidden');
+                    document.querySelectorAll('.sidebar-nav-btn').forEach(b => b.classList.remove('active-tab','bg-slate-900/60','text-teal-300'));
+                    const nb = document.getElementById('nav-tab-' + tabId.replace('tab-',''));
+                    if (nb) nb.classList.add('active-tab','bg-slate-900/60','text-teal-300');
+                }
+                if (isVtab) {
+                    document.querySelectorAll('.vtab').forEach(t => { t.classList.add('hidden'); t.style.display='none'; });
+                    const el = document.getElementById(tabId);
+                    if (el) { el.classList.remove('hidden'); el.style.display = tabId === 'vtab-chat' ? 'flex' : 'block'; }
+                }
+            }
+
+            function setMobileActive(el) {
+                document.querySelectorAll('.mob-nav-item').forEach(i => i.classList.remove('active'));
+                el.classList.add('active');
+            }
+
+            /* ── Sidebar collapse ── */
+            function toggleSidebarCollapse() {
+                document.getElementById('app-sidebar').classList.toggle('sidebar-collapsed');
+            }
+
+            /* ── Expandable sections ── */
+            function toggleExpand(id) {
+                const body = document.getElementById(id);
+                const icon = document.getElementById(id+'-icon');
+                if (!body) return;
+                body.classList.toggle('open');
+                if (icon) icon.textContent = body.classList.contains('open') ? '▲ Collapse' : '▼ Expand';
+            }
+
+            /* ── Env / Tenant Switcher ── */
+            const ENV_CFG = {
+                PROD:    { cls:'badge-env-prod',    label:'🟢 PROD'    },
+                UAT:     { cls:'badge-env-uat',     label:'🟡 UAT'     },
+                STAGING: { cls:'badge-env-dev',     label:'🔵 STAGING' },
+                DEV:     { cls:'badge-env-dev',     label:'🟠 DEV'     },
+                DR:      { cls:'badge-critical',    label:'🔴 DR'      }
+            };
+            function switchEnv(env) {
+                const cfg = ENV_CFG[env] || ENV_CFG.PROD;
+                ['envBadge','env-badge-dash'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    el.className = 'badge ' + cfg.cls;
+                    el.textContent = cfg.label;
+                });
+                showToast(`Environment switched to ${env}. Compliance data refreshed.`, 'info');
+            }
+
+            const TENANT_DATA = {
+                HDFC:  { name:'HDFC Fintech',    score:78, inc:3,  viol:7  },
+                ICICI: { name:'ICICI Bank',      score:71, inc:5,  viol:12 },
+                SBI:   { name:'SBI',             score:84, inc:1,  viol:3  },
+                KOTAK: { name:'Kotak Mahindra',  score:62, inc:8,  viol:19 },
+                ALL:   { name:'Global Admin',    score:'—', inc:17, viol:41 }
+            };
+            function switchTenant(key) {
+                const t = TENANT_DATA[key]; if (!t) return;
+                const sub = document.getElementById('dpo-workspace-sub');
+                if (sub) sub.textContent = `${t.name} · Score: ${t.score}/100 · Incidents: ${t.inc} · Violations: ${t.viol} · Tenant: ${key}`;
+                showToast(`Switched to ${t.name} tenant workspace.`, 'success');
+            }
+
+            /* ── Dashboard role switcher ── */
+            function switchDashRole(role) {
+                document.querySelectorAll('.drole-btn').forEach(b => { b.classList.remove('badge-done'); b.classList.add('badge-pending'); });
+                const btn = document.getElementById('drole-'+role);
+                if (btn) { btn.classList.add('badge-done'); btn.classList.remove('badge-pending'); }
+                showToast(`Dashboard switched to ${role.toUpperCase()} view.`, 'info');
+            }
+
+            /* ── AI Prediction ── */
+            const PRED = {
+                30:  { score:82, violation:4,  breach:'12%', vendor:'6.4' },
+                60:  { score:85, violation:6,  breach:'9%',  vendor:'5.8' },
+                90:  { score:87, violation:9,  breach:'7%',  vendor:'5.1' },
+                180: { score:91, violation:14, breach:'4%',  vendor:'4.3' }
+            };
+            function runAIPrediction(days) {
+                const p = PRED[days]; if (!p) return;
+                ['pred-score','pred-violation','pred-breach','pred-vendor'].forEach((id,i) => {
+                    const el = document.getElementById(id); if (!el) return;
+                    const vals = [p.score, p.violation, p.breach, p.vendor];
+                    el.style.opacity = '0.3';
+                    setTimeout(() => { el.textContent = vals[i]; el.style.opacity = '1'; el.style.transition = 'opacity .4s'; }, 300);
+                });
+                showToast(`AI prediction updated for ${days}-day horizon.`, 'info');
+            }
+
+            /* ── Render: Scanned Records ── */
+            function renderScannedRecords() {
+                const t = document.getElementById('scanned-records-tbody'); if (!t) return;
+                t.innerHTML = state.scannedRecords.map(r => {
+                    const riskBadge = r.status === 'Exposed'
+                    ? '<span class="badge badge-critical">High</span>'
+                    : '<span class="badge badge-done">Low</span>';
+                    const statusBadge = r.status === 'Exposed'
+                    ? '<span class="badge badge-critical">Exposed</span>'
+                    : '<span class="badge badge-done">Secure</span>';
+                    return `<tr class="border-b border-slate-800/40 hover:bg-slate-900/30 transition-colors">
+          <td class="py-3 px-3 font-mono text-slate-400 text-[10px]">${r.path}</td>
+          <td class="py-3 px-3 text-slate-300">${r.type}</td>
+          <td class="py-3 px-3">${riskBadge}</td>
+          <td class="py-3 px-3">${statusBadge}</td>
+            </tr>`;
+                }).join('');
+            }
+
+            /* ── Render: Consents ── */
+            function renderConsents() {
+                const t = document.getElementById('consents-tbody'); if (!t) return;
+                t.innerHTML = state.consents.map(c => {
+                    const b = c.status === 'Active' ? 'badge-done' : c.status === 'Withdrawn' ? 'badge-critical' : 'badge-pending';
+                    return `<tr class="border-b border-slate-800/40 hover:bg-slate-900/30 transition-colors">
+          <td class="py-3 px-3 font-mono text-teal-400 text-[10px]">${c.id}</td>
+          <td class="py-3 px-3 text-slate-300">${c.principal}</td>
+          <td class="py-3 px-3 text-slate-400 text-[11px]">${c.purpose}</td>
+          <td class="py-3 px-3"><span class="badge ${b}">${c.status}</span></td>
+          <td class="py-3 px-3 font-mono text-slate-500 text-[10px]">${c.updated}</td>
+            </tr>`;
+                }).join('');
+            }
+
+            /* ── Render: Incidents ── */
+            function renderIncidents() {
+                ['incidents-list-container','incidents-list-container-tab'].forEach(cid => {
+                    const c = document.getElementById(cid); if (!c) return;
+                    c.innerHTML = state.incidents.map(inc => {
+                        const dot = inc.severity === 'High' ? 'sev-critical' : inc.severity === 'Medium' ? 'sev-high' : 'sev-medium';
+                        const badge = inc.status === 'Resolved' ? 'badge-done' : inc.severity === 'High' ? 'badge-critical' : 'badge-pending';
+                        const resolveBtn = inc.status !== 'Resolved'
+                        ? `<button onclick="resolveIncident('${inc.id}')" class="action-btn action-btn-ghost py-1 text-[10px]">Resolve <span class="badge badge-pending ml-1">Pending</span></button>` : '';
+                        return `<div class="flex items-start gap-3 bg-slate-900/60 rounded-xl p-3 border border-slate-800 hover:border-slate-700 transition-colors">
+            <span class="sev-dot ${dot} mt-1 flex-shrink-0"></span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="font-mono text-[9px] text-slate-500">${inc.id}</span>
+                <span class="badge ${badge}">${inc.severity}</span>
+            </div>
+              <p class="text-xs font-semibold text-slate-200 leading-normal">${inc.title}</p>
+              <p class="text-[10px] text-slate-500 mt-0.5 font-mono">Detected: ${inc.date}</p>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <p class="text-[9px] text-teal-400 font-mono font-bold mb-2 uppercase">${inc.status}</p>
+              ${resolveBtn}
+            </div>
+            </div>`;
+                    }).join('');
+                });
+                const m = document.getElementById('incidents-metric-active');
+                if (m) {
+                    const n = state.incidents.filter(i=>i.status!=='Resolved').length;
+                    m.textContent = n;
+                    m.className = `font-mono text-4xl font-bold ${n > 0 ? 'text-red-400' : 'text-slate-400'}`;
+                }
+            }
+
+            /* ── Render: Vendors ── */
+            function renderVendors() {
+                ['vendors-tbody','vendors-tbody-vendor'].forEach(id => {
+                    const t = document.getElementById(id); if (!t) return;
+                    t.innerHTML = state.vendors.map(v => {
+                        const dpa = v.dpaSigned ? '<span class="badge badge-done">DPA Active</span>' : '<span class="badge badge-critical">No DPA</span>';
+                        const risk = v.status === 'Low Risk' ? 'badge-done' : v.status === 'Medium Risk' ? 'badge-pending' : 'badge-critical';
+                        return `<tr class="border-b border-slate-800/40 hover:bg-slate-900/30 transition-colors">
+            <td class="py-3 px-3 font-semibold text-slate-200">${v.name}</td>
+            <td class="py-3 px-3 font-mono text-[10px] text-slate-400">${v.type}</td>
+            <td class="py-3 px-3 font-mono font-bold text-indigo-400">${v.compliance}%</td>
+            <td class="py-3 px-3">${dpa}</td>
+            <td class="py-3 px-3"><span class="badge ${risk}">${v.status}</span></td>
+            <td class="py-3 px-3"><button onclick="toggleVendorDpa('${v.id}')" class="action-btn action-btn-ghost py-1 text-[10px]">${v.dpaSigned?'Revoke':'Sign DPA'}</button></td>
+            </tr>`;
+                    }).join('');
+                });
+            }
+
+            /* ── Render: Chat ── */
+            function renderChat() {
+                ['chat-messages-container','vendor-chat-container'].forEach(id => {
+                    const c = document.getElementById(id); if (!c) return;
+                    c.innerHTML = state.chatMessages.map(m => {
+                        const bg = m.sender==='user'
+                        ? 'bg-indigo-950/40 border border-indigo-900/50 text-slate-200 ml-auto'
+                        : m.sender==='system'
+                        ? 'bg-slate-900/60 border border-slate-800 text-slate-400'
+                        : 'bg-slate-900/60 border border-slate-800 text-slate-200';
+                        const lbl = m.sender==='user' ? 'You' : m.sender==='system' ? 'System' : 'Guardian AI Advisor';
+                        return `<div class="p-3 rounded-xl max-w-[88%] leading-relaxed ${bg}">
+            <p class="font-bold text-[9px] uppercase tracking-wider mb-1 text-slate-500">${lbl}</p>
+            <p class="text-sm whitespace-pre-line">${m.text}</p>
+            </div>`;
+                    }).join('');
+                    c.scrollTop = c.scrollHeight;
+                });
+            }
+
+            /* ── Actions ── */
+            function runDataScan() {
+                if (state.isScanning) return;
+                state.isScanning = true; state.dataScannerProgress = 10;
+                showToast('Data discovery scan initiated…', 'info');
+                const btn = document.getElementById('scanner-action-btn');
+                const pc  = document.getElementById('scanner-progress-container');
+                const pb  = document.getElementById('scanner-progress-bar');
+                if (btn) { btn.disabled = true; btn.textContent = 'Scanning…'; }
+                if (pc) pc.classList.remove('hidden');
+                if (pb) pb.style.width = '10%';
+                const iv = setInterval(() => {
+                    state.dataScannerProgress += 15;
+                    if (pb) pb.style.width = state.dataScannerProgress + '%';
+                    if (state.dataScannerProgress >= 100) {
+                        clearInterval(iv); state.isScanning = false;
+                        if (btn) { btn.disabled = false; btn.textContent = '🔍 Run Discovery Agent'; }
+                        if (pc) pc.classList.add('hidden');
+                        showToast('Discovery scan complete. 4,218 records catalogued.', 'success');
+                    }
+                }, 400);
+            }
+
+            function registerNewIncident() {
+                const titles = [
+                    'Unencrypted database replication detected',
+                    'Vendor failed compliance audit record',
+                    'Cross-border transfer violating whitelist'
+                ];
+                const inc = { id:`INC-${Math.floor(100+Math.random()*900)}`, title:titles[Math.floor(Math.random()*titles.length)], severity:'High', status:'Investigating', date:new Date().toISOString().split('T')[0] };
+                state.incidents.unshift(inc);
+                state.complianceScore = Math.max(state.complianceScore - 8, 30);
+                showToast('Incident raised. AI Risk Agent triggered.', 'error');
+                renderIncidents();
+            }
+
+            function resolveIncident(id) {
+                state.incidents = state.incidents.map(i => i.id===id ? {...i, status:'Resolved'} : i);
+                state.complianceScore = Math.min(state.complianceScore + 5, 100);
+                showToast(`Incident ${id} resolved and closed.`, 'success');
+                renderIncidents();
+            }
+
+            function toggleVendorDpa(id) {
+                state.vendors = state.vendors.map(v => {
+                    if (v.id!==id) return v;
+                    const next = !v.dpaSigned;
+                    return { ...v, dpaSigned:next, compliance: next ? Math.min(v.compliance+20,100):Math.max(v.compliance-20,10), status: next?'Low Risk':'High Risk' };
+                });
+                showToast('Vendor DPA status updated.', 'success');
+                renderVendors();
+            }
+
+            function addNewVendor() {
+                const names = ['DataVantage Cloud','DigiAuth India','SecurePipe Solutions','MatrixNode Corp'];
+                const n = names[Math.floor(Math.random()*names.length)];
+                state.vendors.push({ id:`V-00${state.vendors.length+1}`, name:n, type:'Sub-Processor', compliance:Math.floor(40+Math.random()*55), dpaSigned:false, status:'Evaluating' });
+                showToast(`Registered Sub-Processor: ${n}.`, 'info');
+                renderVendors();
+            }
+
+            /* ── Chat send ── */
+            async function handleSendMessage(e) {
+                e.preventDefault();
+                const inp = document.getElementById('chat-input') || document.getElementById('vendor-chat-input');
+                const text = inp ? inp.value.trim() : '';
+                if (!text) return;
+                state.chatMessages.push({ sender:'user', text });
+                if (inp) inp.value = '';
+                state.isAiLoading = true;
+                renderChat();
+                const ldr = '<div id="chat-loader" class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 max-w-[90%] flex items-center gap-2"><span class="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce"></span><span class="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style="animation-delay:.2s"></span><span class="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style="animation-delay:.4s"></span><span class="text-[10px] text-slate-500">Analyzing…</span></div>';
+                const mc = document.getElementById('chat-messages-container') || document.getElementById('vendor-chat-container');
+                if (mc) mc.insertAdjacentHTML('beforeend', ldr);
+                const apiKey = '';
+                try {
+                    const sys = `You are DPDPA Guardian AI Compliance Advisor. Answer strictly about India's DPDPA 2023. Be precise, structured, professional. 3-4 bullet points max. Never display real Aadhaar or PAN.`;
+                    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${apiKey}`,
+                                          { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ contents:[{parts:[{text}]}], systemInstruction:{parts:[{text:sys}]} }) });
+                    const d = await r.json();
+                    const ans = d.candidates?.[0]?.content?.parts?.[0]?.text || 'Compliance advisor temporarily unavailable.';
+                    state.chatMessages.push({ sender:'ai', text:ans });
+                } catch {
+                    state.chatMessages.push({ sender:'ai', text:'DPDPA Copilot is available. Check your network or API key to enable live AI responses.' });
+                } finally {
+                    state.isAiLoading = false;
+                    const l = document.getElementById('chat-loader'); if (l) l.remove();
+                    renderChat();
+                }
+            }
+
+            /* ── Control Heatmap ── */
+            const CTRL_ROWS = ['Data Consent','Purpose Limit','Data Minimise','Access Control','Breach Notify','DSR Handling','Vendor DPA'];
+            const CTRL_UNITS = ['Ops','Mktg','Fin','IT','HR'];
+            const CTRL_DATA = [[0,3,0,0,2],[2,0,3,0,2],[0,1,2,1,0],[0,2,1,0,1],[3,2,0,1,1],[2,2,0,1,1],[1,3,2,1,0]];
+            const CTRL_CLS = ['bg-emerald-800/60 text-emerald-300','bg-yellow-800/50 text-yellow-300','bg-orange-800/50 text-orange-300','bg-red-900/60 text-red-300'];
+            const CTRL_LBL = ['Pass','Partial','Gap','Fail'];
+            function renderControlHeatmap() {
+                const t = document.getElementById('control-heatmap-body'); if (!t) return;
+                t.innerHTML = '';
+                CTRL_ROWS.forEach((ctrl, ci) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td class="text-[9px] text-slate-500 pr-1 py-0.5 font-mono">${ctrl}</td>` +
+                        CTRL_DATA[ci].map((v,ui) => `<td class="py-0.5 px-0.5"><div class="rounded text-center py-1 text-[8px] font-bold cursor-pointer hover:scale-110 transition-transform ${CTRL_CLS[v]}" title="${CTRL_UNITS[ui]}: ${CTRL_LBL[v]}">${CTRL_LBL[v]}</div></td>`).join('');
+                    t.appendChild(tr);
+                });
+            }
+
+            /* ── Global search ── */
+            const SEARCH_IDX = [
+                { tag:'Violation', label:'VIO-001 — Processing Aadhaar without consent', tab:'tab-violations' },
+                { tag:'Violation', label:'VIO-002 — PAN data transferred without DPA', tab:'tab-violations' },
+                { tag:'Incident', label:'INC-101 — Unauthorized vendor API query', tab:'tab-incidents' },
+                { tag:'Consent',  label:'C-902 — Ananya Iyer, Withdrawn', tab:'tab-consent' },
+                { tag:'Risk',     label:'Aadhaar accessed without 2FA — Operations 9.2', tab:'tab-risk' },
+                { tag:'Vendor',   label:'RapidVerification Ltd — High Risk, No DPA', tab:'tab-vendors' },
+                { tag:'DSAR',     label:'DSR-0085 — Anita Sharma, SLA Breach Risk', tab:'tab-dsar' },
+            ];
+            function runGlobalSearch(q) {
+                const drop = document.getElementById('search-dropdown'); if (!drop) return;
+                q = q.trim().toLowerCase();
+                if (!q) { drop.classList.add('hidden'); return; }
+                const matches = SEARCH_IDX.filter(i => i.label.toLowerCase().includes(q) || i.tag.toLowerCase().includes(q));
+                drop.innerHTML = matches.length ? matches.map(m =>
+                                                              `<div onclick="activeSidebarTab('${m.tab}');switchView('dpo-dashboard');document.getElementById('search-dropdown').classList.add('hidden');document.getElementById('global-search').value=''"
+          class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-800 cursor-pointer border-b border-slate-800/60 last:border-0">
+          <span class="badge badge-progress flex-shrink-0">${m.tag}</span>
+          <span class="text-xs text-slate-300">${m.label}</span>
+            </div>`).join('') : `<div class="px-4 py-3 text-xs text-slate-500">No results for "${q}"</div>`;
+                drop.classList.remove('hidden');
+            }
+            document.addEventListener('click', e => {
+                if (!e.target.closest('#header-search-wrap')) document.getElementById('search-dropdown')?.classList.add('hidden');
+            });
+
+            /* ── Live Flow Monitor ── */
+            const FLOW_EVT = [
+                () => `<span class="text-teal-400">${new Date().toLocaleTimeString()}</span> Consent granted · DP-${Math.floor(Math.random()*9000+1000)} · Loan`,
+                () => `<span class="text-amber-400">${new Date().toLocaleTimeString()}</span> Data export · Marketing · ${Math.floor(Math.random()*400+50)} PAN records`,
+                () => `<span class="text-red-400">${new Date().toLocaleTimeString()}</span> Vendor anomaly · ${Math.floor(Math.random()*5+1)} unauthorized calls`,
+                () => `<span class="text-indigo-400">${new Date().toLocaleTimeString()}</span> Deletion · ${Math.floor(Math.random()*20+1)} records purged`,
+                () => `<span class="text-teal-400">${new Date().toLocaleTimeString()}</span> Consent withdrawn · DP-${Math.floor(Math.random()*9000+1000)}`,
+            ];
+            function startFlowMonitor() {
+                setInterval(() => {
+                    const f = document.getElementById('flow-feed'); if (!f) return;
+                    const d = document.createElement('div');
+                    d.className = 'text-[10px] text-slate-400';
+                    d.innerHTML = FLOW_EVT[Math.floor(Math.random()*FLOW_EVT.length)]();
+                    f.insertBefore(d, f.firstChild);
+                    while (f.children.length > 12) f.removeChild(f.lastChild);
+                    // jitter KPIs
+                    const jitter = (id, base, range) => { const el=document.getElementById(id); if(el&&!el.textContent.includes('K')){el.textContent=Math.max(1,base+Math.floor(Math.random()*range-range/2))} };
+                    jitter('flow-app',243,8); jitter('flow-alert',3,2);
+                }, 3500);
+            }
+        </script>
+    </body>
+</html>
